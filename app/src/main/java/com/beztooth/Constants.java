@@ -94,62 +94,91 @@ public class Constants {
 
     public static class Services
     {
-        public static String Get(String uuid)
+        public static String Get(String serviceUUID)
         {
-            return services.get(GetUuid(uuid));
+            if ( serviceUUID == null) return null;
+            serviceUUID = serviceUUID.toUpperCase();
+
+            String serviceUUIDSubstring = GetUUIDSubstring(serviceUUID);
+            String s = services.get(serviceUUIDSubstring);
+
+            // Try retrieving the service by full uuid (less common)
+            if (s == null)
+            {
+                s = services.get(serviceUUID);
+            }
+
+            return s;
         }
 
-        public static String Get(String mac, String uuid, boolean deviceOnly)
+        public static String Get(String mac, String serviceUUID, boolean deviceOnly)
         {
             if (mac != null)
             {
                 Device d = Devices.GetDevice(mac);
                 if (d != null)
                 {
-                    Service s = d.GetService(uuid);
+                    Service s = d.GetService(serviceUUID);
                     if (s != null) return s.Name;
                 }
             }
 
-            return deviceOnly ? null : services.get(GetUuid(uuid));
+            // If deviceOnly is not specified, check the constants.
+            return deviceOnly ? null : Get(serviceUUID);
         }
     }
 
     public static class Characteristics
     {
-        public static Characteristic Get(String device, String service, String characteristic)
+        public static Characteristic Get(String characteristicUUID)
+        {
+            if ( characteristicUUID == null) return null;
+            characteristicUUID = characteristicUUID.toUpperCase();
+
+            String uuidSubstring = GetUUIDSubstring(characteristicUUID);
+            Characteristic c = characteristics.get(uuidSubstring);
+
+            // Try retrieving the characteristic by full uuid (less common)
+            if (c == null)
+            {
+                c = characteristics.get(characteristicUUID);
+            }
+
+            return c;
+        }
+
+        public static Characteristic Get(String device, String serviceUUID, String characteristicUUID)
         {
             if (device != null) {
                 Device d = Devices.GetDevice(device);
                 if (d != null) {
-                    Service s = d.GetService(service);
+                    Service s = d.GetService(serviceUUID);
                     if (s != null) {
-                        Characteristic c = s.GetCharacteristic(characteristic);
+                        Characteristic c = s.GetCharacteristic(characteristicUUID);
                         if (c != null) return c;
                     }
                 }
             }
 
-            return GetCharacteristic(characteristic);
-        }
-
-        private static Characteristic GetCharacteristic(String uuid)
-        {
-            return characteristics.get(GetUuid(uuid));
+            return Get(characteristicUUID);
         }
     }
 
-    private static String GetUuid(String uuid)
+    // Returns a substring of the UUID, specifically these (x):
+    // 0000xxxx-0000-0000-0000-0000000000
+    // This is because the gatt specifications only list the assigned number as these 4 digits of the UUID:
+    // https://www.bluetooth.com/specifications/gatt
+    private static String GetUUIDSubstring(String uuid)
     {
         if (uuid == null) return null;
 
-        uuid = uuid.toUpperCase();
-
+        // If UUID is already a substring, just return it.
         if (uuid.length() == 4)
         {
             return uuid;
         }
 
+        // Ensure UUID is of proper length (slashes included).
         if (uuid.length() != 36) return null;
 
         return uuid.substring(4, 8);
@@ -198,6 +227,8 @@ public class Constants {
         services.put("1804", "Tx Power");
         services.put("181C", "User Data");
         services.put("181D", "Weight Scale");
+        services.put("181D", "Weight Scale");
+        services.put("1D14D6EE-FD63-4FA1-BFA4-8F47B42119F0", "Silicon Labs OTA");
     }
 
     static {
@@ -435,6 +466,7 @@ public class Constants {
         characteristics.put("2A9D", new Characteristic("2A9D", "Weight Measurement", CharacteristicReadType.STRING));
         characteristics.put("2A9E", new Characteristic("2A9E", "Weight Scale Feature", CharacteristicReadType.STRING));
         characteristics.put("2A79", new Characteristic("2A79", "Wind Chill", CharacteristicReadType.STRING));
+        characteristics.put("F7BF3564-FB6D-4E53-88A4-5E37E0326063", new Characteristic("F7BF3564-FB6D-4E53-88A4-5E37E0326063", "Silicon Labs OTA Control", CharacteristicReadType.STRING));
     }
 
     static {

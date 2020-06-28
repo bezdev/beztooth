@@ -51,7 +51,7 @@ public class ConnectionManager extends Service
 
     private static final String TAG = "ConnectionManager";
 
-    private static final int SCAN_TIME = 5000;
+    private static final int SCAN_TIME = 10000;
 
     private BluetoothLeScanner s_BluetoothLeScanner;
 
@@ -577,6 +577,7 @@ public class ConnectionManager extends Service
         if (device == null) return;
         if (device.IsConnected()) return;
 
+        Logger.Debug(TAG, "ConnectDevice: " + device.GetAddress());
         device.SetGatt(device.GetDevice().connectGatt(m_Context, true, device.GetBluetoothGattCallback()));
     }
 

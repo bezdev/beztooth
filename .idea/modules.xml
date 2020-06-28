@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="bluetooth/app" />
-      <module fileurl="file://$PROJECT_DIR$/bluetooth.iml" filepath="$PROJECT_DIR$/bluetooth.iml" group="bluetooth" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="beztooth/app" />
+      <module fileurl="file://$PROJECT_DIR$/beztooth.iml" filepath="$PROJECT_DIR$/beztooth.iml" group="beztooth" />
     </modules>
   </component>
 </project>

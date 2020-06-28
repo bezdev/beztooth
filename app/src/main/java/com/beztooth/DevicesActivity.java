@@ -136,6 +136,7 @@ public class DevicesActivity extends Activity
             Logger.Debug(TAG, "OnDeviceClick: " + address);
 
             ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
+            if (device == null) return;
 
             Intent intent = new Intent(v.getContext(), DeviceActivity.class);
             intent.putExtra(ConnectionManager.ADDRESS, device.GetAddress());
@@ -149,6 +150,7 @@ public class DevicesActivity extends Activity
         if (!m_IsConnectionManagerBound) return;
 
         ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
+        // TODO: figure out why this check is needed
         if (device == null) return;
 
         LayoutInflater vi = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);

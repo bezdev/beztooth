@@ -192,25 +192,27 @@ public class DeviceActivity extends AppCompatActivity
         }
     }
 
-    private void AddServiceSelect(String serviceUuid, List<BluetoothGattCharacteristic> characteristics)
+    private void AddServiceSelect(String serviceUUID, List<BluetoothGattCharacteristic> characteristics)
     {
-        String serviceName = Constants.Services.Get(m_Address, serviceUuid, false);
+        String serviceName = Constants.Services.Get(m_Address, serviceUUID, false);
 
         LayoutInflater vi = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-        View service = vi.inflate(R.layout.service_select, null);
-        TextView textView = service.findViewById(R.id.service_name);
-        textView.setText(serviceName == null ? serviceUuid : serviceName);
-        textView = service.findViewById(R.id.service_uuid);
+        // Service layout shows text for both service name and uuid.  If there is no service name, only display the uuid.
+        View serviceView = vi.inflate(R.layout.service_select, null);
+        TextView serviceNameView = serviceView.findViewById(R.id.service_name);
+        serviceNameView.setText(serviceName == null ? serviceUUID : serviceName);
+        TextView serviceUUIDView = serviceView.findViewById(R.id.service_uuid);
+        // Show uuid only if there is a service name, otherwise the name will be the uuid.
         if (serviceName != null)
         {
-            textView.setText(serviceUuid);
+            serviceUUIDView.setText(serviceUUID);
         } else
         {
-            textView.setVisibility(View.GONE);
+            serviceUUIDView.setVisibility(View.GONE);
         }
 
-        service.setTag(serviceUuid);
+        serviceView.setTag(serviceUUID);
         //v.setClickable(true);
         //v.setOnClickListener();
 
@@ -230,40 +232,44 @@ public class DeviceActivity extends AppCompatActivity
 
         for (BluetoothGattCharacteristic c : sortedCharacteristics)
         {
-            AddCharacteristicView(serviceUuid, c.getUuid().toString(), service);
+            AddCharacteristicView(serviceUUID, c.getUuid().toString(), serviceView);
         }
 
         LinearLayout insertPoint = findViewById(R.id.service_scroll);
-        insertPoint.addView(service);
+        insertPoint.addView(serviceView);
     }
 
-    private void AddCharacteristicView(String serviceUuid, String characteristicUuid, View service)
+    private void AddCharacteristicView(String serviceUUID, String characteristicUUID, View serviceView)
     {
-        Constants.Characteristic characteristicConstant = Constants.Characteristics.Get(m_Address, serviceUuid, characteristicUuid);
+        Constants.Characteristic characteristicConstant = Constants.Characteristics.Get(m_Address, serviceUUID, characteristicUUID);
         String characteristicName = characteristicConstant == null ? null : characteristicConstant.Name;
 
         LayoutInflater vi = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-        View characteristic = vi.inflate(R.layout.characteristic_select, null);
-        TextView textView = characteristic.findViewById(R.id.characteristic_name);
-        textView.setText(characteristicName == null ? characteristicUuid : characteristicName);
-        textView = characteristic.findViewById(R.id.characteristic_uuid);
+        // Characteristic layout shows text for both characteristic name and uuid.  If there is no characteristic name, only display the uuid.
+        View characteristicView = vi.inflate(R.layout.characteristic_select, null);
+        TextView characteristicNameView = characteristicView.findViewById(R.id.characteristic_name);
+        characteristicNameView.setText(characteristicName == null ? characteristicUUID : characteristicName);
+        TextView characteristicUUIDView = characteristicView.findViewById(R.id.characteristic_uuid);
+        // Characteristic uuid only if there is a characteristic name, otherwise the name will be the uuid.
         if (characteristicName != null)
         {
-            textView.setText(serviceUuid);
+            characteristicUUIDView.setText(characteristicUUID);
         }
         else
         {
-            textView.setVisibility(View.GONE);
+            characteristicUUIDView.setVisibility(View.GONE);
         }
-        int properties = m_Device.GetCharacteristic(serviceUuid, characteristicUuid).getProperties();
-        textView = characteristic.findViewById(R.id.characteristic_permissions);
-        textView.setText("Properties: " + ConnectionManager.GetProperties(properties, " | "));
 
-        characteristic.setTag(characteristicUuid);
+        // Display permissions of this characteristic (read/write/notify).
+        int properties = m_Device.GetCharacteristic(serviceUUID, characteristicUUID).getProperties();
+        TextView characteristicPermissions = characteristicView.findViewById(R.id.characteristic_permissions);
+        characteristicPermissions.setText("Properties: " + ConnectionManager.GetProperties(properties, " | "));
 
-        LinearLayout insertPoint = service.findViewById(R.id.characteristic_scroll);
-        insertPoint.addView(characteristic);
+        characteristicView.setTag(characteristicUUID);
+
+        LinearLayout insertPoint = serviceView.findViewById(R.id.characteristic_scroll);
+        insertPoint.addView(characteristicView);
     }
 
     private void UpdateCharacteristicData(String serviceUuid, String characteristicUuid, byte[] data)
