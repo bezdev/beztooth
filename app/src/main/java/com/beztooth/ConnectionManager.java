@@ -23,6 +23,7 @@ import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.widget.Toast;
 
+import java.lang.reflect.Method;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -351,6 +352,24 @@ public class ConnectionManager extends Service
             m_GattActionQueue.peek().Do();
         }
 
+        private boolean ClearCache()
+        {
+            try
+            {
+                Method m = m_Gatt.getClass().getMethod("refresh", new Class[0]);
+                if (m != null)
+                {
+                    return ((Boolean) m.invoke(m_Gatt, new Object[0])).booleanValue();
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Debug(TAG, "ClearCache failed");
+            }
+
+            return false;
+        }
+
         private void BroadcastOnServicesDiscovered()
         {
             Intent intent = new Intent(ON_SERVICES_DISCOVERED);
@@ -579,6 +598,7 @@ public class ConnectionManager extends Service
 
         Logger.Debug(TAG, "ConnectDevice: " + device.GetAddress());
         device.SetGatt(device.GetDevice().connectGatt(m_Context, true, device.GetBluetoothGattCallback()));
+        device.ClearCache();
     }
 
     private static byte GetDayCode(int day) {
