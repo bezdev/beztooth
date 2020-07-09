@@ -15,11 +15,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -101,6 +100,39 @@ public class DeviceActivity extends AppCompatActivity
                 String characteristic = intent.getStringExtra(ConnectionManager.CHARACTERISTIC);
                 byte[] data = intent.getByteArrayExtra(ConnectionManager.DATA);
                 //UpdateDescriptorData(service, characteristic, data);
+            }
+        }
+    };
+
+    public class CharacteristicActionOnClick implements View.OnClickListener
+    {
+        private String m_ServiceUUID;
+        private String m_CharacteristicUUID;
+        public CharacteristicActionOnClick(String serviceUUID, String characteristicUUID) {
+            m_ServiceUUID = serviceUUID;
+            m_CharacteristicUUID = characteristicUUID;
+        }
+
+        @Override
+        public void onClick(View v)
+        {
+            int action = Integer.parseInt(v.getTag().toString());
+            if (action == BluetoothGattCharacteristic.PROPERTY_READ)
+            {
+                m_Device.ReadCharacteristic(m_Device.GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID));
+            }
+            else if (action == BluetoothGattCharacteristic.PROPERTY_WRITE)
+            {
+                // TODO: only sync time is supported for now - add ability to write custom data
+                if (m_ServiceUUID.contains("1805") && m_CharacteristicUUID.contains("2a2b")) {
+                    BluetoothGattCharacteristic c = m_Device.GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID);
+                    c.setValue(ConnectionManager.GetTimeInBytes(System.currentTimeMillis()));
+                    m_Device.WriteCharacteristic(c);
+                }
+            }
+            else if (action == BluetoothGattCharacteristic.PROPERTY_NOTIFY)
+            {
+                // TODO
             }
         }
     };
@@ -200,6 +232,8 @@ public class DeviceActivity extends AppCompatActivity
 
         // Service layout shows text for both service name and uuid.  If there is no service name, only display the uuid.
         View serviceView = vi.inflate(R.layout.service_select, null);
+        serviceView.setTag(serviceUUID);
+
         TextView serviceNameView = serviceView.findViewById(R.id.service_name);
         serviceNameView.setText(serviceName == null ? serviceUUID : serviceName);
         TextView serviceUUIDView = serviceView.findViewById(R.id.service_uuid);
@@ -207,12 +241,11 @@ public class DeviceActivity extends AppCompatActivity
         if (serviceName != null)
         {
             serviceUUIDView.setText(serviceUUID);
-        } else
+        }
+        else
         {
             serviceUUIDView.setVisibility(View.GONE);
         }
-
-        serviceView.setTag(serviceUUID);
         //v.setClickable(true);
         //v.setOnClickListener();
 
@@ -248,6 +281,7 @@ public class DeviceActivity extends AppCompatActivity
 
         // Characteristic layout shows text for both characteristic name and uuid.  If there is no characteristic name, only display the uuid.
         View characteristicView = vi.inflate(R.layout.characteristic_select, null);
+        characteristicView.setTag(characteristicUUID);
         TextView characteristicNameView = characteristicView.findViewById(R.id.characteristic_name);
         characteristicNameView.setText(characteristicName == null ? characteristicUUID : characteristicName);
         TextView characteristicUUIDView = characteristicView.findViewById(R.id.characteristic_uuid);
@@ -261,12 +295,12 @@ public class DeviceActivity extends AppCompatActivity
             characteristicUUIDView.setVisibility(View.GONE);
         }
 
-        // Display permissions of this characteristic (read/write/notify).
+        // Display permissions of this characteristic
         int properties = m_Device.GetCharacteristic(serviceUUID, characteristicUUID).getProperties();
         TextView characteristicPermissions = characteristicView.findViewById(R.id.characteristic_permissions);
         characteristicPermissions.setText("Properties: " + ConnectionManager.GetProperties(properties, " | "));
-
-        characteristicView.setTag(characteristicUUID);
+        // Show the supported buttons
+        ShowCharacteristicActions(serviceUUID, characteristicView, properties);
 
         LinearLayout insertPoint = serviceView.findViewById(R.id.characteristic_scroll);
         insertPoint.addView(characteristicView);
@@ -285,11 +319,11 @@ public class DeviceActivity extends AppCompatActivity
         Constants.Characteristic characteristicConstant = Constants.Characteristics.Get(m_Address, serviceUuid, characteristicUuid);
         if (characteristicConstant == null)
         {
-            characteristicValue = GetDataString(data, Constants.CharacteristicReadType.HEX);
+            characteristicValue = ConnectionManager.GetDataString(data, Constants.CharacteristicReadType.HEX);
         }
         else
         {
-            characteristicValue = GetDataString(data, characteristicConstant.ReadType);
+            characteristicValue = ConnectionManager.GetDataString(data, characteristicConstant.ReadType);
         }
 
         textView.setText(characteristicValue);
@@ -307,33 +341,36 @@ public class DeviceActivity extends AppCompatActivity
         }
     }
 
-    private static String GetDataString(byte[] data, Constants.CharacteristicReadType type)
+    private void ShowCharacteristicActions(String serviceUUID, View characteristicView, int properties)
     {
-        if (type == Constants.CharacteristicReadType.STRING)
-        {
-            return new String(data);
-        }
-        else if (type == Constants.CharacteristicReadType.HEX)
-        {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < data.length; i++)
-            {
-                sb.append(String.format("%02X", data[i]));
-                if (i <= data.length - 1) sb.append(" ");
+        int[] c_SupportedActions = new int[] {
+                BluetoothGattCharacteristic.PROPERTY_READ,
+                BluetoothGattCharacteristic.PROPERTY_WRITE,
+                BluetoothGattCharacteristic.PROPERTY_NOTIFY
+        };
+
+        for (int action : c_SupportedActions) {
+            Button button = null;
+            if (action == BluetoothGattCharacteristic.PROPERTY_READ) {
+                button = characteristicView.findViewById(R.id.characteristic_read);
+            } else if (action == BluetoothGattCharacteristic.PROPERTY_WRITE) {
+                button = characteristicView.findViewById(R.id.characteristic_write);
+            } else if (action == BluetoothGattCharacteristic.PROPERTY_NOTIFY) {
+                button = characteristicView.findViewById(R.id.characteristic_notify);
             }
-            return sb.toString();
-        }
-        else if (type == Constants.CharacteristicReadType.INTEGER)
-        {
-            return "" + ByteBuffer.allocate(4).put(data).order(ByteOrder.LITTLE_ENDIAN).getInt(0);
-        }
-        else if (type == Constants.CharacteristicReadType.TIME)
-        {
-            if (data.length != 10) return "";
 
-            return "" + data[2] + "-" + data[3] + ": " + data[4] + ":" + data[5] + ":" + data[6];
-        }
+            button.setTag(action);
 
-        return "";
+            if ((properties & action) == action)
+            {
+                button.setVisibility(View.VISIBLE);
+                View.OnClickListener onClick = new CharacteristicActionOnClick(serviceUUID, characteristicView.getTag().toString());
+                button.setOnClickListener(onClick);
+            }
+            else
+            {
+                button.setVisibility(View.GONE);
+            }
+        }
     }
 }

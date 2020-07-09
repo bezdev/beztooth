@@ -24,6 +24,8 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.widget.Toast;
 
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -352,24 +354,6 @@ public class ConnectionManager extends Service
             m_GattActionQueue.peek().Do();
         }
 
-        private boolean ClearCache()
-        {
-            try
-            {
-                Method m = m_Gatt.getClass().getMethod("refresh", new Class[0]);
-                if (m != null)
-                {
-                    return ((Boolean) m.invoke(m_Gatt, new Object[0])).booleanValue();
-                }
-            }
-            catch (Exception e)
-            {
-                Logger.Debug(TAG, "ClearCache failed");
-            }
-
-            return false;
-        }
-
         private void BroadcastOnServicesDiscovered()
         {
             Intent intent = new Intent(ON_SERVICES_DISCOVERED);
@@ -598,7 +582,6 @@ public class ConnectionManager extends Service
 
         Logger.Debug(TAG, "ConnectDevice: " + device.GetAddress());
         device.SetGatt(device.GetDevice().connectGatt(m_Context, true, device.GetBluetoothGattCallback()));
-        device.ClearCache();
     }
 
     private static byte GetDayCode(int day) {
@@ -650,6 +633,38 @@ public class ConnectionManager extends Service
         field[9] = 0;
 
         return field;
+    }
+
+    public static String GetDataString(byte[] data, Constants.CharacteristicReadType type)
+    {
+        if (type == Constants.CharacteristicReadType.STRING)
+        {
+            return new String(data);
+        }
+        else if (type == Constants.CharacteristicReadType.HEX)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < data.length; i++)
+            {
+                sb.append(String.format("%02X", data[i]));
+                if (i <= data.length - 1) sb.append(" ");
+            }
+            return sb.toString();
+        }
+        else if (type == Constants.CharacteristicReadType.INTEGER)
+        {
+            return "" + ByteBuffer.allocate(4).put(data).order(ByteOrder.LITTLE_ENDIAN).getInt(0);
+        }
+        else if (type == Constants.CharacteristicReadType.TIME)
+        {
+            if (data.length != 10) return "";
+
+            int year = (data[0] & 0xFF) + ((data[1] & 0xFF) << 8);
+
+            return String.format("%d/%02d/%02d %02d:%02d:%02d", year, data[2], data[3], data[4], data[5], data[6]);
+        }
+
+        return "";
     }
 
     private void BroadcastOnDeviceScanned(String address)
