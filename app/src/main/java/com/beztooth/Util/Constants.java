@@ -1,4 +1,4 @@
-package com.beztooth;
+package com.beztooth.Util;
 
 import java.util.ArrayList;
 import java.util.HashMap;

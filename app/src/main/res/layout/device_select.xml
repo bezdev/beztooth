@@ -1,30 +1,29 @@
-
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.beztooth.UI.BezContainer xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
-    <LinearLayout
+    <com.beztooth.UI.BezContainer
+        android:id="@+id/device_select_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="10dp"
         android:layout_marginLeft="10dp"
         android:layout_marginRight="10dp"
-        android:padding="10dp"
+        android:padding="20dp"
         android:background="@drawable/select_border"
         android:orientation="vertical">
-
         <TextView
-            android:id="@+id/device_name"
+            android:id="@+id/device_select_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/nameBlue"
+            android:textColor="@color/BezBlue"
             android:textSize="24sp"
             android:textStyle="bold" />
         <TextView
-            android:id="@+id/device_mac"
+            android:id="@+id/device_select_mac"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@color/uuidGray"
             android:textSize="16sp" />
-    </LinearLayout>
-</LinearLayout>
+    </com.beztooth.UI.BezContainer>
+</com.beztooth.UI.BezContainer>

@@ -15,7 +15,7 @@
             android:id="@+id/service_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/nameBlue"
+            android:textColor="@color/BezBlue"
             android:textSize="16sp"
             android:textStyle="bold" />
         <TextView

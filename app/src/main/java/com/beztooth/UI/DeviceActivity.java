@@ -1,4 +1,4 @@
-package com.beztooth;
+package com.beztooth.UI;
 
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
@@ -17,6 +17,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import com.beztooth.Bluetooth.ConnectionManager;
+import com.beztooth.R;
+import com.beztooth.Util.*;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -99,39 +103,6 @@ public class DeviceActivity extends BluetoothActivity
                 String characteristic = intent.getStringExtra(ConnectionManager.CHARACTERISTIC);
                 byte[] data = intent.getByteArrayExtra(ConnectionManager.DATA);
                 //UpdateDescriptorData(service, characteristic, data);
-            }
-        }
-    };
-
-    public class CharacteristicActionOnClick implements View.OnClickListener
-    {
-        private String m_ServiceUUID;
-        private String m_CharacteristicUUID;
-        public CharacteristicActionOnClick(String serviceUUID, String characteristicUUID) {
-            m_ServiceUUID = serviceUUID;
-            m_CharacteristicUUID = characteristicUUID;
-        }
-
-        @Override
-        public void onClick(View v)
-        {
-            int action = Integer.parseInt(v.getTag().toString());
-            if (action == BluetoothGattCharacteristic.PROPERTY_READ)
-            {
-                m_Device.ReadCharacteristic(m_Device.GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID));
-            }
-            else if (action == BluetoothGattCharacteristic.PROPERTY_WRITE)
-            {
-                // TODO: only sync time is supported for now - add ability to write custom data
-                if (m_ServiceUUID.contains("1805") && m_CharacteristicUUID.contains("2a2b")) {
-                    BluetoothGattCharacteristic c = m_Device.GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID);
-                    c.setValue(ConnectionManager.GetTimeInBytes(System.currentTimeMillis()));
-                    m_Device.WriteCharacteristic(c);
-                }
-            }
-            else if (action == BluetoothGattCharacteristic.PROPERTY_NOTIFY)
-            {
-                // TODO
             }
         }
     };
@@ -340,6 +311,40 @@ public class DeviceActivity extends BluetoothActivity
         }
     }
 
+    private class CharacteristicActionOnClick implements BezButton.OnClick
+    {
+        private String m_ServiceUUID;
+        private String m_CharacteristicUUID;
+        public CharacteristicActionOnClick(String serviceUUID, String characteristicUUID) {
+            m_ServiceUUID = serviceUUID;
+            m_CharacteristicUUID = characteristicUUID;
+        }
+
+        @Override
+        public void Do(View v)
+        {
+            int action = Integer.parseInt(v.getTag().toString());
+            if (action == BluetoothGattCharacteristic.PROPERTY_READ)
+            {
+                m_Device.ReadCharacteristic(m_Device.GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID));
+            }
+            else if (action == BluetoothGattCharacteristic.PROPERTY_WRITE)
+            {
+                // TODO: only sync time is supported for now - add ability to write custom data
+                if (m_ServiceUUID.contains("1805") && m_CharacteristicUUID.contains("2a2b")) {
+                    BluetoothGattCharacteristic c = m_Device.GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID);
+                    c.setValue(ConnectionManager.GetTimeInBytes(System.currentTimeMillis()));
+                    m_Device.WriteCharacteristic(c);
+                    m_Device.ReadCharacteristic(c);
+                }
+            }
+            else if (action == BluetoothGattCharacteristic.PROPERTY_NOTIFY)
+            {
+                // TODO
+            }
+        }
+    };
+
     private void ShowCharacteristicActions(String serviceUUID, View characteristicView, int properties)
     {
         int[] c_SupportedActions = new int[] {
@@ -348,13 +353,18 @@ public class DeviceActivity extends BluetoothActivity
                 BluetoothGattCharacteristic.PROPERTY_NOTIFY
         };
 
-        for (int action : c_SupportedActions) {
-            Button button = null;
-            if (action == BluetoothGattCharacteristic.PROPERTY_READ) {
+        for (int action : c_SupportedActions)
+        {
+            BezButton button = null;
+            if (action == BluetoothGattCharacteristic.PROPERTY_READ)
+            {
                 button = characteristicView.findViewById(R.id.characteristic_read);
-            } else if (action == BluetoothGattCharacteristic.PROPERTY_WRITE) {
+            }
+            else if (action == BluetoothGattCharacteristic.PROPERTY_WRITE)
+            {
                 button = characteristicView.findViewById(R.id.characteristic_write);
-            } else if (action == BluetoothGattCharacteristic.PROPERTY_NOTIFY) {
+            } else if (action == BluetoothGattCharacteristic.PROPERTY_NOTIFY)
+            {
                 button = characteristicView.findViewById(R.id.characteristic_notify);
             }
 
@@ -363,8 +373,7 @@ public class DeviceActivity extends BluetoothActivity
             if ((properties & action) == action)
             {
                 button.setVisibility(View.VISIBLE);
-                View.OnClickListener onClick = new CharacteristicActionOnClick(serviceUUID, characteristicView.getTag().toString());
-                button.setOnClickListener(onClick);
+                button.SetOnClick(new CharacteristicActionOnClick(serviceUUID, characteristicView.getTag().toString()));
             }
             else
             {

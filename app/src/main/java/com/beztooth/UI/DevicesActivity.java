@@ -1,5 +1,6 @@
-package com.beztooth;
+package com.beztooth.UI;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -14,6 +15,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import com.beztooth.Bluetooth.ConnectionManager;
+import com.beztooth.R;
+import com.beztooth.Util.Logger;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -84,19 +89,7 @@ public class DevicesActivity extends BluetoothActivity
 
         m_IsConnectionManagerBound = false;
 
-        Button button = findViewById(R.id.scanbutton);
-        button.setOnClickListener(new View.OnClickListener()
-        {
-            // Scan OnClick
-            public void onClick(View v)
-            {
-                ClearDevicesUI();
-
-                if (m_IsConnectionManagerBound && m_ConnectionManager.Initialize()) {
-                    m_ConnectionManager.ScanDevices();
-                }
-            }
-        });
+        AddEventListeners();
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ConnectionManager.ON_DEVICE_SCANNED);
@@ -126,48 +119,66 @@ public class DevicesActivity extends BluetoothActivity
         super.onDestroy();
     }
 
-    private View.OnClickListener m_OnDeviceClick  = new View.OnClickListener()
+    private void AddEventListeners()
     {
-        @Override
-        public void onClick(View v)
+        Button button = findViewById(R.id.scanbutton);
+        button.setOnClickListener(new View.OnClickListener()
         {
-            String address = v.getTag().toString();
-            Logger.Debug(TAG, "OnDeviceClick: " + address);
+            // Scan OnClick
+            public void onClick(View v)
+            {
+                ClearDevicesUI();
 
-            ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
-            if (device == null) return;
-
-            Intent intent = new Intent(v.getContext(), DeviceActivity.class);
-            intent.putExtra(ConnectionManager.ADDRESS, device.GetAddress());
-            intent.putExtra(ConnectionManager.NAME, device.GetName());
-            v.getContext().startActivity(intent);
-        }
-    };
+                if (m_IsConnectionManagerBound && m_ConnectionManager.Initialize()) {
+                    m_ConnectionManager.ScanDevices();
+                }
+            }
+        });
+    }
 
     private void AddDeviceToUI(String address)
     {
         if (!m_IsConnectionManagerBound) return;
 
         ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
-        // TODO: figure out why this check is needed
         if (device == null) return;
 
         LayoutInflater vi = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View v = vi.inflate(R.layout.device_select, null);
+        View view = (View) vi.inflate(R.layout.device_select, null);
 
-        TextView textView = v.findViewById(R.id.device_name);
+        // Set the device name and address, if there is no name, only display the address.
+        TextView textView = view.findViewById(R.id.device_select_name);
         textView.setText(device.GetName());
-        if (!device.GetName().equals(device.GetAddress())) {
-            textView = v.findViewById(R.id.device_mac);
+        if (!device.GetName().equals(device.GetAddress()))
+        {
+            textView = view.findViewById(R.id.device_select_mac);
             textView.setText(device.GetAddress());
         }
 
-        v.setTag(device.GetAddress());
-        v.setClickable(true);
-        v.setOnClickListener(m_OnDeviceClick);
+        // Make clickable and set onClick event handler.
+        BezContainer container = (BezContainer) view.findViewById(R.id.device_select_container);
+        container.setTag(device.GetAddress());
+        container.setClickable(true);
+        container.SetOnClick(new BezContainer.OnClick()
+        {
+            @Override
+            public void Do(View view)
+            {
+                String address = view.getTag().toString();
+                Logger.Debug(TAG, "OnDeviceClick: " + address);
+
+                ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
+                if (device == null) return;
+
+                Intent intent = new Intent(view.getContext(), DeviceActivity.class);
+                intent.putExtra(ConnectionManager.ADDRESS, device.GetAddress());
+                intent.putExtra(ConnectionManager.NAME, device.GetName());
+                m_Activity.startActivityForResult(intent, 2);
+            }
+        });
 
         LinearLayout insertPoint = findViewById(R.id.device_scroll);
-        insertPoint.addView(v);
+        insertPoint.addView(view);
     }
 
     private void ClearDevicesUI()

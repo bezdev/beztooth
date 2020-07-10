@@ -9,18 +9,18 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".Beztooth">
+        <activity android:name=".UI.Beztooth">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".DeviceActivity" />
-        <activity android:name=".DevicesActivity" />
+        <activity android:name=".UI.DeviceActivity" />
+        <activity android:name=".UI.DevicesActivity" />
         <activity android:name=".TestDeviceActivity" />
         <service
-            android:name=".ConnectionManager"
+            android:name=".Bluetooth.ConnectionManager"
             android:enabled="true" />
     </application>
 

@@ -1,4 +1,4 @@
-package com.beztooth;
+package com.beztooth.Bluetooth;
 
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
@@ -36,10 +36,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
+import com.beztooth.Util.*;
+
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.le.ScanSettings.CALLBACK_TYPE_ALL_MATCHES;
-import static android.support.v4.app.ActivityCompat.startActivityForResult;
 
 public class ConnectionManager extends Service
 {
@@ -451,7 +452,7 @@ public class ConnectionManager extends Service
     private final IBinder binder = new LocalBinder();
     public class LocalBinder extends Binder
     {
-        ConnectionManager getService()
+        public ConnectionManager getService()
         {
             return ConnectionManager.this;
         }

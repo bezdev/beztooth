@@ -10,6 +10,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 
+import com.beztooth.Bluetooth.ConnectionManager;
+
 public class TestDeviceActivity extends AppCompatActivity
 {
     private ConnectionManager m_ConnectionManager;

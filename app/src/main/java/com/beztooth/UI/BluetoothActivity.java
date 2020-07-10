@@ -1,4 +1,4 @@
-package com.beztooth;
+package com.beztooth.UI;
 
 import android.Manifest;
 import android.app.Activity;
@@ -12,12 +12,16 @@ import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.widget.Toast;
 
+import com.beztooth.Bluetooth.ConnectionManager;
+import com.beztooth.R;
+
 public abstract class BluetoothActivity extends Activity {
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final int REQUEST_ENABLE_BT = 1;
 
     private static boolean s_WaitingOnEnableBluetoothRequest = false;
 
+    protected Activity m_Activity;
     // Whether or not the Activity is currently visible.
     private boolean m_IsActive = false;
 
@@ -42,6 +46,7 @@ public abstract class BluetoothActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        m_Activity = this;
 
         CheckPermissions();
 
@@ -116,7 +121,8 @@ public abstract class BluetoothActivity extends Activity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults)
+    {
         if (requestCode == PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
         {
             if (grantResults.length > 0 && grantResults[0] != PackageManager.PERMISSION_GRANTED)

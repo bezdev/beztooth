@@ -13,7 +13,7 @@
             android:id="@+id/characteristic_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/nameBlue"
+            android:textColor="@color/BezBlue"
             android:textSize="16sp"
             android:textStyle="bold" />
         <TextView
@@ -39,23 +39,23 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
-            <Button
+            <com.beztooth.UI.BezButton
                 android:id="@+id/characteristic_read"
-                android:background="@drawable/select_border"
+                android:background="@drawable/select_border_small"
                 android:layout_marginRight="10dp"
                 android:text="Read"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
-            <Button
+            <com.beztooth.UI.BezButton
                 android:id="@+id/characteristic_write"
-                android:background="@drawable/select_border"
+                android:background="@drawable/select_border_small"
                 android:layout_marginRight="10dp"
                 android:text="Write"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
-            <Button
+            <com.beztooth.UI.BezButton
                 android:id="@+id/characteristic_notify"
-                android:background="@drawable/select_border"
+                android:background="@drawable/select_border_small"
                 android:layout_marginRight="10dp"
                 android:text="Notify"
                 android:layout_width="wrap_content"
