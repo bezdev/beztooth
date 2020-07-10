@@ -75,11 +75,17 @@ public class DeviceActivity extends BluetoothActivity
             if (!m_IsConnectionManagerBound) return;
 
             String address = intent.getStringExtra(ConnectionManager.ADDRESS);
+
+            // Only process broadcasts for this device.
             if (address == null || !address.equals(m_Address)) return;
 
             if (intent.getAction().equals(ConnectionManager.ON_DEVICE_CONNECTED))
             {
                 m_Device = m_ConnectionManager.GetDevice(address);
+            }
+            else if (intent.getAction().equals(ConnectionManager.ON_DEVICE_DISCONNECTED))
+            {
+                finish();
             }
             else if (intent.getAction().equals(ConnectionManager.ON_SERVICES_DISCOVERED))
             {
@@ -123,28 +129,28 @@ public class DeviceActivity extends BluetoothActivity
         Toolbar toolbar = findViewById(R.id.toolbarDevice);
         toolbar.setTitle(m_Name);
 
-        Logger.Debug(TAG, "DeviceActivity::OnCreate");
+        AddEventListeners();
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ConnectionManager.ON_DEVICE_CONNECTED);
+        intentFilter.addAction(ConnectionManager.ON_DEVICE_DISCONNECTED);
         intentFilter.addAction(ConnectionManager.ON_SERVICES_DISCOVERED);
         intentFilter.addAction(ConnectionManager.ON_CHARACTERISTIC_READ);
         LocalBroadcastManager.getInstance(this).registerReceiver(m_BroadcastReceiver, intentFilter);
+
+        intent = new Intent(this, ConnectionManager.class);
+        bindService(intent, m_ConnectionManagerConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
     protected void onStart()
     {
         super.onStart();
-        Intent intent = new Intent(this, ConnectionManager.class);
-        bindService(intent, m_ConnectionManagerConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
     protected void onStop()
     {
-        unbindService(m_ConnectionManagerConnection);
-        m_IsConnectionManagerBound = false;
         super.onStop();
     }
 
@@ -152,7 +158,23 @@ public class DeviceActivity extends BluetoothActivity
     protected void onDestroy()
     {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(m_BroadcastReceiver);
+        unbindService(m_ConnectionManagerConnection);
+        m_IsConnectionManagerBound = false;
+
         super.onDestroy();
+    }
+
+    private void AddEventListeners()
+    {
+        // Disconnect onClick
+        Button button = findViewById(R.id.toolbarDisconnectButton);
+        button.setOnClickListener(new View.OnClickListener()
+        {
+            public void onClick(View v)
+            {
+                m_ConnectionManager.DisconnectDevice(m_Device);
+            }
+        });
     }
 
     private void ShowServices()

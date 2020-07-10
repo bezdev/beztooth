@@ -13,6 +13,13 @@
         android:minHeight="?attr/actionBarSize"
         android:theme="?attr/actionBarTheme"
         app:title="Devices">
+        <Button
+            android:id="@+id/toolbarDisconnectButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:background="@color/colorAccent"
+            android:text="Disconnect" />
     </android.support.v7.widget.Toolbar>
 
     <ScrollView

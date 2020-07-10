@@ -48,6 +48,7 @@ public class ConnectionManager extends Service
     public final static String ON_BLUETOOTH_DISABLED = "beztooth.Device.ON_BLUETOOTH_DISABLED";
     public final static String ON_DEVICE_SCANNED = "beztooth.ON_DEVICE_SCANNED";
     public final static String ON_DEVICE_CONNECTED = "beztooth.Device.ON_DEVICE_CONNECTED";
+    public final static String ON_DEVICE_DISCONNECTED = "beztooth.Device.ON_DEVICE_DISCONNECTED";
     public final static String ON_SERVICES_DISCOVERED = "beztooth.Device.ON_SERVICES_DISCOVERED";
     public final static String ON_CHARACTERISTIC_READ = "beztooth.Device.ON_CHARACTERISTIC_READ";
     public final static String ON_DESCRIPTOR_READ = "beztooth.Device.ON_DESCRIPTOR_READ";
@@ -180,6 +181,7 @@ public class ConnectionManager extends Service
                 {
                     m_ConnectionState = STATE_DISCONNECTED;
                     m_ConnectedDevices.remove(m_Address);
+                    BroadcastOnDeviceDisconnected(m_Address);
                 }
             }
 
@@ -273,6 +275,18 @@ public class ConnectionManager extends Service
             m_GattActionQueue = new LinkedList<>();
         }
 
+        public void Connect()
+        {
+            Logger.Debug(TAG, "Connect Device: " + m_Address);
+            m_Gatt = m_Device.connectGatt(m_Context, true, c_BluetoothGattCallback);
+        }
+
+        public void Disconnect()
+        {
+            Logger.Debug(TAG, "Disconnect Device: " + m_Address);
+            m_Gatt.disconnect();
+        }
+
         public void DiscoverServices()
         {
             if (!IsConnected()) return;
@@ -338,11 +352,6 @@ public class ConnectionManager extends Service
             return m_Gatt.getServices();
         }
 
-        public BluetoothGattCallback GetBluetoothGattCallback()
-        {
-            return c_BluetoothGattCallback;
-        }
-
         public void SetGatt(BluetoothGatt gatt)
         {
             m_Gatt = gatt;
@@ -401,6 +410,13 @@ public class ConnectionManager extends Service
         private void BroadcastOnDeviceConnected(String address)
         {
             Intent intent = new Intent(ON_DEVICE_CONNECTED);
+            intent.putExtra(ADDRESS, address);
+            LocalBroadcastManager.getInstance(m_Context).sendBroadcast(intent);
+        }
+
+        private void BroadcastOnDeviceDisconnected(String address)
+        {
+            Intent intent = new Intent(ON_DEVICE_DISCONNECTED);
             intent.putExtra(ADDRESS, address);
             LocalBroadcastManager.getInstance(m_Context).sendBroadcast(intent);
         }
@@ -610,8 +626,21 @@ public class ConnectionManager extends Service
         if (device == null) return;
         if (device.IsConnected()) return;
 
-        Logger.Debug(TAG, "ConnectDevice: " + device.GetAddress());
-        device.SetGatt(device.GetDevice().connectGatt(m_Context, true, device.GetBluetoothGattCallback()));
+        device.Connect();
+    }
+
+    public void DisconnectDevice(String address)
+    {
+        DisconnectDevice(m_Devices.get(address));
+    }
+
+    public void DisconnectDevice(Device device)
+    {
+        if (!Initialize()) return;
+        if (device == null) return;
+        if (!device.IsConnected()) return;
+
+        device.Disconnect();
     }
 
     private static byte GetDayCode(int day) {
