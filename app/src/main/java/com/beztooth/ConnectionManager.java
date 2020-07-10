@@ -15,15 +15,15 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
-import android.widget.Toast;
 
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Calendar;
@@ -32,20 +32,26 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.le.ScanSettings.CALLBACK_TYPE_ALL_MATCHES;
+import static android.support.v4.app.ActivityCompat.startActivityForResult;
 
 public class ConnectionManager extends Service
 {
+    // Broadcast Events
+    public final static String ON_BLUETOOTH_DISABLED = "beztooth.Device.ON_BLUETOOTH_DISABLED";
     public final static String ON_DEVICE_SCANNED = "beztooth.ON_DEVICE_SCANNED";
     public final static String ON_DEVICE_CONNECTED = "beztooth.Device.ON_DEVICE_CONNECTED";
     public final static String ON_SERVICES_DISCOVERED = "beztooth.Device.ON_SERVICES_DISCOVERED";
     public final static String ON_CHARACTERISTIC_READ = "beztooth.Device.ON_CHARACTERISTIC_READ";
     public final static String ON_DESCRIPTOR_READ = "beztooth.Device.ON_DESCRIPTOR_READ";
+
+    // Broadcast Data
     public final static String ADDRESS = "beztooth.Device.ADDRESS";
     public final static String NAME = "beztooth.Device.NAME";
     public final static String SERVICE = "beztooth.Device.SERVICE";
@@ -56,7 +62,8 @@ public class ConnectionManager extends Service
 
     private static final int SCAN_TIME = 10000;
 
-    private BluetoothLeScanner s_BluetoothLeScanner;
+    private BluetoothAdapter m_BluetoothAdapter;
+    private BluetoothLeScanner m_BluetoothLeScanner;
 
     private HashMap<String, Device> m_Devices = new HashMap<>();
     private HashSet<String> m_ConnectedDevices = new HashSet<>();
@@ -72,18 +79,24 @@ public class ConnectionManager extends Service
         void Do();
     }
 
+    // Bluetooth Device.  Contains metadata about the device, connection state, and underlying
+    // BluetoothDevice and BluetoothGatt references.  Handles BluetoothGattCallback callbacks:
+    // https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback
     public class Device
     {
+        private static final String TAG = "Device";
+
         private static final boolean DISCOVER_WHEN_CONNECTED = true;
         private static final boolean READ_WHEN_DISCOVERED = true;
-
-        private static final String TAG = "Device";
 
         private String m_Name;
         private String m_Address;
         private BluetoothDevice m_Device;
         private BluetoothGatt m_Gatt;
         private int m_ConnectionState;
+
+        // Queue of GattActions.  A device can only handle one request at a time, but from the UI
+        // we might fire off several actions at once.  Need to dequeue after performing every action.
         private LinkedList<GattAction> m_GattActionQueue;
 
         private class GattDiscoverServices implements GattAction
@@ -145,6 +158,7 @@ public class ConnectionManager extends Service
             }
         }
 
+        // Device callbacks.
         private final BluetoothGattCallback c_BluetoothGattCallback = new BluetoothGattCallback()
         {
             @Override
@@ -247,10 +261,8 @@ public class ConnectionManager extends Service
 
         private Device() { }
 
-        public Device(Context context, BluetoothDevice bluetoothDevice)
+        public Device(BluetoothDevice bluetoothDevice)
         {
-            m_Context = context;
-
             m_ConnectionState = STATE_DISCONNECTED;
 
             m_Device = bluetoothDevice;
@@ -448,18 +460,27 @@ public class ConnectionManager extends Service
     @Override
     public void onCreate()
     {
+        super.onCreate();
+
         Initialize();
+
+        registerReceiver(m_Receiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId)
     {
+        super.onStartCommand(intent, flags, startId);
+
         return START_STICKY;
     }
 
     @Override
     public void onDestroy()
     {
+        unregisterReceiver(m_Receiver);
+
+        super.onDestroy();
     }
 
     @Override
@@ -468,6 +489,7 @@ public class ConnectionManager extends Service
         return binder;
     }
 
+    // Scan callback.  Called when a device is discovered.
     private ScanCallback m_ScanCallback = new ScanCallback()
     {
         @Override
@@ -477,9 +499,10 @@ public class ConnectionManager extends Service
             {
                 BluetoothDevice bluetoothDevice = result.getDevice();
 
-                // device already found
+                // Device already found, skip.
                 if (m_Devices.containsKey(bluetoothDevice.getAddress())) return;
-                Device device = new Device(m_Context, bluetoothDevice);
+
+                Device device = new Device(bluetoothDevice);
                 m_Devices.put(device.GetAddress(), device);
 
                 BroadcastOnDeviceScanned(device.GetAddress());
@@ -497,27 +520,28 @@ public class ConnectionManager extends Service
             m_Context = getApplicationContext();
 
             final BluetoothManager bluetoothManager = (BluetoothManager) m_Context.getSystemService(Context.BLUETOOTH_SERVICE);
-            BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
-
-            // Checks if Bluetooth is supported on the device.
-            if (bluetoothAdapter == null)
-            {
-                /*
-                if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
-                    Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                    startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-                }
-                */
-                Toast.makeText(this, R.string.error_bluetooth_not_supported, Toast.LENGTH_SHORT).show();
-                return false;
-            }
+            m_BluetoothAdapter = bluetoothManager.getAdapter();
 
             m_IsScanning = false;
-            s_BluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
-
-            m_IsInitialized = true;
         }
 
+        // Checks if Bluetooth is supported on the device.
+        if (m_BluetoothAdapter == null || !m_BluetoothAdapter.isEnabled())
+        {
+            BroadcastOnBluetoothDisabled();
+            m_IsInitialized = false;
+            return false;
+        }
+
+        m_BluetoothLeScanner = m_BluetoothAdapter.getBluetoothLeScanner();
+        if (m_BluetoothLeScanner == null)
+        {
+            BroadcastOnBluetoothDisabled();
+            m_IsInitialized = false;
+            return false;
+        }
+
+        m_IsInitialized = true;
         return true;
     }
 
@@ -528,7 +552,7 @@ public class ConnectionManager extends Service
 
     public void ScanDevices()
     {
-        if (!m_IsInitialized) return;
+        if (!Initialize()) return;
         if (m_IsScanning) return;
 
         // Remove all devices that aren't connected.
@@ -547,14 +571,18 @@ public class ConnectionManager extends Service
         ScanSettings settings = (new ScanSettings.Builder().setCallbackType(CALLBACK_TYPE_ALL_MATCHES).build());
 
         m_IsScanning = true;
-        s_BluetoothLeScanner.startScan(filters, settings, m_ScanCallback);
+        m_BluetoothLeScanner.startScan(filters, settings, m_ScanCallback);
 
         new Handler().postDelayed(new Runnable()
         {
             @Override
             public void run()
             {
-                s_BluetoothLeScanner.stopScan(m_ScanCallback);
+                if (Initialize())
+                {
+                    m_BluetoothLeScanner.stopScan(m_ScanCallback);
+                }
+
                 m_IsScanning = false;
             }
         }, SCAN_TIME);
@@ -577,6 +605,7 @@ public class ConnectionManager extends Service
 
     public void ConnectDevice(Device device)
     {
+        if (!Initialize()) return;
         if (device == null) return;
         if (device.IsConnected()) return;
 
@@ -635,6 +664,7 @@ public class ConnectionManager extends Service
         return field;
     }
 
+    // Get string representation of the byte data, formatted depending on the data type.
     public static String GetDataString(byte[] data, Constants.CharacteristicReadType type)
     {
         if (type == Constants.CharacteristicReadType.STRING)
@@ -661,10 +691,41 @@ public class ConnectionManager extends Service
 
             int year = (data[0] & 0xFF) + ((data[1] & 0xFF) << 8);
 
-            return String.format("%d/%02d/%02d %02d:%02d:%02d", year, data[2], data[3], data[4], data[5], data[6]);
+            return String.format(Locale.getDefault(), "%d/%02d/%02d %02d:%02d:%02d", year, data[2], data[3], data[4], data[5], data[6]);
         }
 
         return "";
+    }
+
+    private final BroadcastReceiver m_Receiver = new BroadcastReceiver()
+    {
+        @Override
+        public void onReceive(Context context, Intent intent)
+        {
+            String action = intent.getAction();
+
+            if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED))
+            {
+                if (!Initialize()) return;
+
+                if (m_BluetoothAdapter.getState() == BluetoothAdapter.STATE_TURNING_OFF)
+                {
+                    m_IsInitialized = false;
+                    BroadcastOnBluetoothDisabled();
+                }
+                else if (m_BluetoothAdapter.getState() == BluetoothAdapter.STATE_OFF)
+                {
+                    m_IsInitialized = false;
+                    BroadcastOnBluetoothDisabled();
+                }
+            }
+        }
+    };
+
+    private void BroadcastOnBluetoothDisabled()
+    {
+        Intent intent = new Intent(ON_BLUETOOTH_DISABLED);
+        LocalBroadcastManager.getInstance(m_Context).sendBroadcast(intent);
     }
 
     private void BroadcastOnDeviceScanned(String address)

@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Beztooth</string>
-    <string name="ble_not_supported">BLE is not supported</string>
-    <string name="no_location_permission">No permission to access location</string>
-    <string name="error_bluetooth_not_supported">Bluetooth not supported.</string>
+    <string name="ble_not_supported">BLE is not supported on this device.</string>
+    <string name="no_location_permission">No permission to access location.</string>
 </resources>

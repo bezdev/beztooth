@@ -11,7 +11,6 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,7 +21,7 @@ import android.widget.TextView;
 import java.util.LinkedList;
 import java.util.List;
 
-public class DeviceActivity extends AppCompatActivity
+public class DeviceActivity extends BluetoothActivity
 {
     public final static String TAG = "DeviceActivity";
 
@@ -173,9 +172,9 @@ public class DeviceActivity extends AppCompatActivity
     @Override
     protected void onStop()
     {
-        super.onStop();
         unbindService(m_ConnectionManagerConnection);
         m_IsConnectionManagerBound = false;
+        super.onStop();
     }
 
     @Override

@@ -1,6 +1,5 @@
 package com.beztooth;
 
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -20,7 +19,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 
-public class DevicesActivity extends Activity
+public class DevicesActivity extends BluetoothActivity
 {
     private static final String TAG = "DevicesActivity";
 
@@ -115,9 +114,9 @@ public class DevicesActivity extends Activity
     @Override
     protected void onStop()
     {
-        super.onStop();
         unbindService(m_ConnectionManagerConnection);
         m_IsConnectionManagerBound = false;
+        super.onStop();
     }
 
     @Override
