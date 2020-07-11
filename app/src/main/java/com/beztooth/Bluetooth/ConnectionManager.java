@@ -135,6 +135,18 @@ public class ConnectionManager extends Service
             public void Do()
             {
                 m_Gatt.disconnect();
+                QueueGattAction(new GattClose());
+            }
+        }
+
+        private class GattClose implements GattAction
+        {
+            @Override
+            public void Do()
+            {
+                m_Gatt.close();
+                // Dequeue here because no other event will be fired in which we can dequeue.
+                DequeueGattAction();
             }
         }
 
@@ -176,6 +188,8 @@ public class ConnectionManager extends Service
             @Override
             public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState)
             {
+                Logger.Debug(TAG, "onConnectionStateChange");
+
                 if (newState == STATE_CONNECTED)
                 {
                     m_ConnectionState = STATE_CONNECTED;
@@ -185,6 +199,7 @@ public class ConnectionManager extends Service
                     if (DISCOVER_WHEN_CONNECTED)
                     {
                         DiscoverServices();
+                        return;
                     }
                 }
                 else if (newState == BluetoothProfile.STATE_DISCONNECTED)
@@ -193,6 +208,8 @@ public class ConnectionManager extends Service
                     m_ConnectedDevices.remove(m_Address);
                     BroadcastOnDeviceDisconnected(m_Address);
                 }
+
+                DequeueGattAction();
             }
 
             @Override
@@ -252,13 +269,26 @@ public class ConnectionManager extends Service
             @Override
             public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status)
             {
+                Logger.Debug(TAG, "onCharacteristicWrite");
+
                 m_Gatt = gatt;
 
                 DequeueGattAction();
             }
 
             @Override
-            public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+            public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic)
+            {
+                Logger.Debug(TAG, "onCharacteristicChanged");
+
+                m_Gatt = gatt;
+
+                DequeueGattAction();
+            }
+
+            @Override
+            public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status)
+            {
                 m_Gatt = gatt;
 
                 Logger.Debug(TAG, "onDescriptorRead: (c: " + descriptor.getCharacteristic().getUuid().toString() + "): " + descriptor.getValue().length + " byte(s): " + new String(descriptor.getValue()));
@@ -267,6 +297,66 @@ public class ConnectionManager extends Service
                         descriptor.getCharacteristic().getService().getUuid().toString(),
                         descriptor.getCharacteristic().getUuid().toString(),
                         descriptor.getValue());
+
+                DequeueGattAction();
+            }
+
+            @Override
+            public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status)
+            {
+                Logger.Debug(TAG, "onDescriptorWrite");
+
+                m_Gatt = gatt;
+
+                DequeueGattAction();
+            }
+
+            @Override
+            public void onMtuChanged(BluetoothGatt gatt, int mtu, int status)
+            {
+                Logger.Debug(TAG, "onMtuChanged");
+
+                m_Gatt = gatt;
+
+                DequeueGattAction();
+            }
+
+            @Override
+            public void onPhyRead(BluetoothGatt gatt, int txPhy, int rxPhy, int status)
+            {
+                Logger.Debug(TAG, "onConnectionStateChange");
+
+                m_Gatt = gatt;
+
+                DequeueGattAction();
+            }
+
+            @Override
+            public void onPhyUpdate(BluetoothGatt gatt, int txPhy, int rxPhy, int status)
+            {
+                Logger.Debug(TAG, "onPhyUpdate");
+
+                m_Gatt = gatt;
+
+                DequeueGattAction();
+            }
+
+            @Override
+            public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status)
+            {
+                Logger.Debug(TAG, "onReadRemoteRssi");
+
+                m_Gatt = gatt;
+
+                DequeueGattAction();
+            }
+
+            @Override
+            public void onReliableWriteCompleted(BluetoothGatt gatt, int status)
+            {
+                Logger.Debug(TAG, "onReliableWriteCompleted");
+
+                m_Gatt = gatt;
 
                 DequeueGattAction();
             }
@@ -287,14 +377,15 @@ public class ConnectionManager extends Service
 
         public void Connect()
         {
-            Logger.Debug(TAG, "Connect Device: " + m_Address);
+            if (IsConnected()) return;
+
             m_Gatt = m_Device.connectGatt(m_Context, true, c_BluetoothGattCallback);
         }
 
         public void Disconnect()
         {
-            Logger.Debug(TAG, "Disconnect Device: " + m_Address);
-            //m_Gatt.disconnect();
+            if (!IsConnected()) return;
+
             QueueGattAction(new GattDisconnect());
         }
 
@@ -363,13 +454,15 @@ public class ConnectionManager extends Service
             return m_Gatt.getServices();
         }
 
-        public void SetGatt(BluetoothGatt gatt)
+        public void ClearGattActionQueue()
         {
-            m_Gatt = gatt;
+            m_GattActionQueue.clear();
         }
 
         private void QueueGattAction(GattAction action)
         {
+            Logger.Debug(TAG, "QueueGattAction (" + m_GattActionQueue.size() + " items in queue): " + action.getClass());
+
             m_GattActionQueue.add(action);
 
             // If this is the only queued action, dequeue it immediately.
@@ -380,16 +473,13 @@ public class ConnectionManager extends Service
 
         private void DequeueGattAction()
         {
+            Logger.Debug(TAG, "DequeueGattAction: " + (m_GattActionQueue.peek() == null ? "null" : m_GattActionQueue.peek().getClass()));
+
             if (m_GattActionQueue.size() == 0) return;
             m_GattActionQueue.remove();
             if (m_GattActionQueue.size() == 0) return;
 
             m_GattActionQueue.peek().Do();
-        }
-
-        private void SyncTime()
-        {
-
         }
 
         private void BroadcastOnServicesDiscovered()
@@ -642,6 +732,8 @@ public class ConnectionManager extends Service
         if (device == null) return;
         if (device.IsConnected()) return;
 
+        // Clear gatt queue in case there are some unprocessed events
+        device.ClearGattActionQueue();
         device.Connect();
     }
 

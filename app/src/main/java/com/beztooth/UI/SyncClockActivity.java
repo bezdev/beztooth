@@ -60,16 +60,15 @@ public class SyncClockActivity extends BluetoothActivity
 
                 AddDevice(intent.getStringExtra(ConnectionManager.ADDRESS));
             }
-            else if (intent.getAction().equals(ConnectionManager.ON_DEVICE_CONNECTED))
+            else if (intent.getAction().equals(ConnectionManager.ON_SERVICES_DISCOVERED))
             {
                 ConnectionManager.Device device = m_ConnectionManager.GetDevice(intent.getStringExtra(ConnectionManager.ADDRESS));
                 if (device == null) return;
 
-                BluetoothGattCharacteristic c = device.GetCharacteristic("00001805-0000-1000-8000-00805F9B34FB", "00002A2B-0000-1000-8000-00805F9B34FB");
+                BluetoothGattCharacteristic c = device.GetCharacteristic(("00001805-0000-1000-8000-00805F9B34FB").toLowerCase(), ("00002A2B-0000-1000-8000-00805F9B34FB").toLowerCase());
                 if (c == null) return;
                 c.setValue(ConnectionManager.GetTimeInBytes(System.currentTimeMillis()));
                 device.WriteCharacteristic(c);
-                // TODO: figure out why this doesn't disconnect
                 device.Disconnect();
             }
         }
@@ -87,6 +86,7 @@ public class SyncClockActivity extends BluetoothActivity
         intentFilter.addAction(ConnectionManager.ON_DEVICE_SCANNED);
         intentFilter.addAction(ConnectionManager.ON_DEVICE_CONNECTED);
         intentFilter.addAction(ConnectionManager.ON_DEVICE_DISCONNECTED);
+        intentFilter.addAction(ConnectionManager.ON_SERVICES_DISCOVERED);
         LocalBroadcastManager.getInstance(this).registerReceiver(m_BroadcastReceiver, intentFilter);
 
         Intent intent = new Intent(this, ConnectionManager.class);

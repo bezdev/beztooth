@@ -66,13 +66,13 @@ public class BezContainer extends LinearLayout
                 return true;
 
             case MotionEvent.ACTION_UP:
-                performClick();
             case MotionEvent.ACTION_CANCEL:
                 BezAnimation.StartButtonUpAnimation(m_Context, this);
 
                 m_IsDown = false;
                 return true;
         }
+
         return false;
     }
 
