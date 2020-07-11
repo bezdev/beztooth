@@ -1,5 +1,6 @@
 package com.beztooth.UI;
 
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -11,24 +12,21 @@ import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.beztooth.Bluetooth.ConnectionManager;
 import com.beztooth.R;
-import com.beztooth.Util.Logger;
 
-import java.util.HashSet;
-import java.util.Iterator;
-
-public class DevicesActivity extends BluetoothActivity
+public class SyncClockActivity extends BluetoothActivity
 {
-    private static final String TAG = "DevicesActivity";
+    private static final String TAG = "SyncClockActivity";
+    private static final String CLOCK_DEVICE_PREFIX = "Sergei";
 
     private ConnectionManager m_ConnectionManager;
     private boolean m_IsConnectionManagerBound;
 
+    // TODO: put this logic into BluetoothActivity
     private ServiceConnection m_ConnectionManagerConnection = new ServiceConnection()
     {
         @Override
@@ -38,7 +36,7 @@ public class DevicesActivity extends BluetoothActivity
             m_ConnectionManager = binder.getService();
             m_IsConnectionManagerBound = true;
 
-            Scan();
+            m_ConnectionManager.ScanDevices();
         }
 
         @Override
@@ -55,7 +53,24 @@ public class DevicesActivity extends BluetoothActivity
         {
             if (intent.getAction().equals(ConnectionManager.ON_DEVICE_SCANNED))
             {
+                if (!intent.getStringExtra(ConnectionManager.NAME).startsWith(CLOCK_DEVICE_PREFIX))
+                {
+                    return;
+                }
+
                 AddDevice(intent.getStringExtra(ConnectionManager.ADDRESS));
+            }
+            else if (intent.getAction().equals(ConnectionManager.ON_DEVICE_CONNECTED))
+            {
+                ConnectionManager.Device device = m_ConnectionManager.GetDevice(intent.getStringExtra(ConnectionManager.ADDRESS));
+                if (device == null) return;
+
+                BluetoothGattCharacteristic c = device.GetCharacteristic("00001805-0000-1000-8000-00805F9B34FB", "00002A2B-0000-1000-8000-00805F9B34FB");
+                if (c == null) return;
+                c.setValue(ConnectionManager.GetTimeInBytes(System.currentTimeMillis()));
+                device.WriteCharacteristic(c);
+                // TODO: figure out why this doesn't disconnect
+                device.Disconnect();
             }
         }
     };
@@ -64,11 +79,9 @@ public class DevicesActivity extends BluetoothActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_devices);
+        setContentView(R.layout.activity_clock_sync);
 
         m_IsConnectionManagerBound = false;
-
-        AddEventListeners();
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ConnectionManager.ON_DEVICE_SCANNED);
@@ -101,40 +114,6 @@ public class DevicesActivity extends BluetoothActivity
         super.onDestroy();
     }
 
-    private void AddEventListeners()
-    {
-        // Scan onClick
-        Button button = findViewById(R.id.toolbarScanButton);
-        button.setOnClickListener(new View.OnClickListener()
-        {
-            public void onClick(View v)
-            {
-                Scan();
-            }
-        });
-    }
-
-    private void Scan()
-    {
-        ClearDevices();
-
-        // Some devices are already connected, display the ones that are.  Connected devices will not
-        // show up during the scan so we must make sure they are already displayed.
-        HashSet<String> connectedDevices = m_ConnectionManager.GetConnectedDevices();
-        Iterator<String> it = connectedDevices.iterator();
-        while(it.hasNext())
-        {
-            LinearLayout ll = findViewById(R.id.device_scroll);
-            String deviceAddress = it.next();
-            View device = ll.findViewWithTag(deviceAddress);
-            if (device == null)
-            {
-                AddDevice(deviceAddress);
-            }
-        }
-
-        m_ConnectionManager.ScanDevices();
-    }
 
     private void AddDevice(String address)
     {
@@ -173,30 +152,14 @@ public class DevicesActivity extends BluetoothActivity
             public void Do(View view)
             {
                 String address = view.getTag().toString();
-                Logger.Debug(TAG, "OnDeviceClick: " + address);
 
                 ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
                 if (device == null) return;
 
-                Intent intent = new Intent(view.getContext(), DeviceActivity.class);
-                intent.putExtra(ConnectionManager.ADDRESS, device.GetAddress());
-                intent.putExtra(ConnectionManager.NAME, device.GetName());
-                // TODO: listen for result
-                m_Activity.startActivityForResult(intent, 2);
+                device.Connect();
             }
         });
 
         insertPoint.addView(view);
-    }
-
-    private void ClearDevices()
-    {
-        if (!m_IsConnectionManagerBound) return;
-
-        LinearLayout ll = findViewById(R.id.device_scroll);
-        if (ll != null)
-        {
-            ll.removeAllViews();
-        }
     }
 }

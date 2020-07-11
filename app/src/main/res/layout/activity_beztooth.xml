@@ -4,7 +4,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
-
     <android.support.v7.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
@@ -12,8 +11,7 @@
         android:background="?attr/colorPrimary"
         android:minHeight="?attr/actionBarSize"
         android:theme="?attr/actionBarTheme"
-        app:title="Beztooth"/>
-
+        app:title="Beztooth" />
     <com.beztooth.UI.BezButton
         android:id="@+id/scanButton"
         android:layout_width="match_parent"
@@ -24,17 +22,14 @@
         android:textColor="@color/BezBlue"
         android:textSize="36sp"
         android:textStyle="bold" />
-    <!--
-    <Button
-        android:layout_marginLeft="20dp"
-        android:layout_marginRight="20dp"
-        android:id="@+id/scanbutton"
+    <com.beztooth.UI.BezButton
+        android:id="@+id/clockSyncButton"
         android:layout_width="match_parent"
         android:layout_height="120dp"
-        android:background="@color/colorPrimary"
-        android:textColor="@color/softwhite"
-        android:textStyle="bold"
-        android:text="Test Device"
-        android:onClick="TestDevice" />
-    -->
+        android:layout_margin="20dp"
+        android:background="@drawable/select_border"
+        android:text="Clock Sync"
+        android:textColor="@color/BezBlue"
+        android:textSize="36sp"
+        android:textStyle="bold" />
 </LinearLayout>

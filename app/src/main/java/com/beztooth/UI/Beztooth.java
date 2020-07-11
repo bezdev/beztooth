@@ -6,16 +6,9 @@ import android.view.View;
 
 import com.beztooth.Bluetooth.ConnectionManager;
 import com.beztooth.R;
-import com.beztooth.TestDeviceActivity;
 
 public class Beztooth extends BluetoothActivity
 {
-    public void TestDevice(View view)
-    {
-        Intent intent = new Intent(view.getContext(), TestDeviceActivity.class);
-        view.getContext().startActivity(intent);
-    }
-
     // MAIN
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -32,13 +25,24 @@ public class Beztooth extends BluetoothActivity
     private void AddEventListeners()
     {
         // Set event listeners
-        BezButton button = (BezButton)findViewById(R.id.scanButton);
+        BezButton button = findViewById(R.id.scanButton);
         button.SetOnClick(new BezButton.OnClick()
         {
             @Override
             public void Do(View view)
             {
                 Intent intent = new Intent(view.getContext(), DevicesActivity.class);
+                view.getContext().startActivity(intent);
+            }
+        });
+
+        button = findViewById(R.id.clockSyncButton);
+        button.SetOnClick(new BezButton.OnClick()
+        {
+            @Override
+            public void Do(View view)
+            {
+                Intent intent = new Intent(view.getContext(), SyncClockActivity.class);
                 view.getContext().startActivity(intent);
             }
         });

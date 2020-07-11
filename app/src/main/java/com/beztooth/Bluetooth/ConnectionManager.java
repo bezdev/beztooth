@@ -128,6 +128,15 @@ public class ConnectionManager extends Service
             }
         }
 
+        private class GattDisconnect implements GattAction
+        {
+            @Override
+            public void Do()
+            {
+                m_Gatt.disconnect();
+            }
+        }
+
         private class GattWriteCharacteristic implements GattAction
         {
             private BluetoothGattCharacteristic m_Characteristic;
@@ -284,7 +293,8 @@ public class ConnectionManager extends Service
         public void Disconnect()
         {
             Logger.Debug(TAG, "Disconnect Device: " + m_Address);
-            m_Gatt.disconnect();
+            //m_Gatt.disconnect();
+            QueueGattAction(new GattDisconnect());
         }
 
         public void DiscoverServices()
@@ -374,6 +384,11 @@ public class ConnectionManager extends Service
             if (m_GattActionQueue.size() == 0) return;
 
             m_GattActionQueue.peek().Do();
+        }
+
+        private void SyncTime()
+        {
+
         }
 
         private void BroadcastOnServicesDiscovered()
@@ -522,7 +537,7 @@ public class ConnectionManager extends Service
                 Device device = new Device(bluetoothDevice);
                 m_Devices.put(device.GetAddress(), device);
 
-                BroadcastOnDeviceScanned(device.GetAddress());
+                BroadcastOnDeviceScanned(device.GetName(), device.GetAddress());
 
                 Logger.Debug(TAG, "Connectable Device Found: " + device.GetAddress());
                 Logger.Debug(TAG, "Device name: " + device.GetName());
@@ -758,9 +773,10 @@ public class ConnectionManager extends Service
         LocalBroadcastManager.getInstance(m_Context).sendBroadcast(intent);
     }
 
-    private void BroadcastOnDeviceScanned(String address)
+    private void BroadcastOnDeviceScanned(String name, String address)
     {
         Intent intent = new Intent(ON_DEVICE_SCANNED);
+        intent.putExtra(NAME, name);
         intent.putExtra(ADDRESS, address);
         LocalBroadcastManager.getInstance(m_Context).sendBroadcast(intent);
     }
