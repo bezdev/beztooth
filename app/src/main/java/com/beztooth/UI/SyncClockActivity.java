@@ -21,7 +21,7 @@ import com.beztooth.R;
 public class SyncClockActivity extends BluetoothActivity
 {
     private static final String TAG = "SyncClockActivity";
-    private static final String CLOCK_DEVICE_PREFIX = "Sergei";
+    private static final String CLOCK_DEVICE_PREFIX = "Clock";
 
     private ConnectionManager m_ConnectionManager;
     private boolean m_IsConnectionManagerBound;

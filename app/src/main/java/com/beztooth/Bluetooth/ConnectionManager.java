@@ -41,6 +41,7 @@ import com.beztooth.Util.*;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.le.ScanSettings.CALLBACK_TYPE_ALL_MATCHES;
+import static android.bluetooth.le.ScanSettings.SCAN_MODE_LOW_LATENCY;
 
 public class ConnectionManager extends Service
 {
@@ -600,7 +601,7 @@ public class ConnectionManager extends Service
         }
 
         LinkedList<ScanFilter> filters = new LinkedList<>();
-        ScanSettings settings = (new ScanSettings.Builder().setCallbackType(CALLBACK_TYPE_ALL_MATCHES).build());
+        ScanSettings settings = (new ScanSettings.Builder().setCallbackType(CALLBACK_TYPE_ALL_MATCHES).setScanMode(SCAN_MODE_LOW_LATENCY).build());
 
         m_IsScanning = true;
         m_BluetoothLeScanner.startScan(filters, settings, m_ScanCallback);
