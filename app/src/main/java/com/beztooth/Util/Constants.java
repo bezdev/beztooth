@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Constants {
+    public static final String BASE_UUID = "0000xxxx-0000-1000-8000-00805F9B34FB";
+
     public enum CharacteristicReadType
     {
         STRING,
@@ -33,7 +35,8 @@ public class Constants {
 
         public Service GetService(String uuid)
         {
-            for (Service s : Services) {
+            for (Service s : Services)
+            {
                 if (s.UUID.equals(uuid)) return s;
             }
 
@@ -81,7 +84,7 @@ public class Constants {
 
     public static class Devices
     {
-        public static Device GetDevice(String mac)
+        public static Device Get(String mac)
         {
             for (Device d : devices)
             {
@@ -96,26 +99,23 @@ public class Constants {
     {
         public static String Get(String serviceUUID)
         {
-            if ( serviceUUID == null) return null;
+            if (serviceUUID == null) return null;
             serviceUUID = serviceUUID.toUpperCase();
 
             String serviceUUIDSubstring = GetUUIDSubstring(serviceUUID);
             String s = services.get(serviceUUIDSubstring);
 
-            // Try retrieving the service by full uuid (less common)
-            if (s == null)
-            {
-                s = services.get(serviceUUID);
-            }
+            if (s != null) return s;
 
-            return s;
+            // Try retrieving the service by full uuid (less common)
+            return services.get(serviceUUID);
         }
 
         public static String Get(String mac, String serviceUUID, boolean deviceOnly)
         {
             if (mac != null)
             {
-                Device d = Devices.GetDevice(mac);
+                Device d = Devices.Get(mac);
                 if (d != null)
                 {
                     Service s = d.GetService(serviceUUID);
@@ -138,22 +138,22 @@ public class Constants {
             String uuidSubstring = GetUUIDSubstring(characteristicUUID);
             Characteristic c = characteristics.get(uuidSubstring);
 
-            // Try retrieving the characteristic by full uuid (less common)
-            if (c == null)
-            {
-                c = characteristics.get(characteristicUUID);
-            }
+            if (c != null) return c;
 
-            return c;
+            // Try retrieving the characteristic by full uuid (less common)
+            return characteristics.get(characteristicUUID);
         }
 
         public static Characteristic Get(String device, String serviceUUID, String characteristicUUID)
         {
-            if (device != null) {
-                Device d = Devices.GetDevice(device);
-                if (d != null) {
+            if (device != null)
+            {
+                Device d = Devices.Get(device);
+                if (d != null)
+                {
                     Service s = d.GetService(serviceUUID);
-                    if (s != null) {
+                    if (s != null)
+                    {
                         Characteristic c = s.GetCharacteristic(characteristicUUID);
                         if (c != null) return c;
                     }
@@ -165,12 +165,14 @@ public class Constants {
     }
 
     // Returns a substring of the UUID, specifically these (x):
-    // 0000xxxx-0000-0000-0000-0000000000
+    // 0000xxxx-0000-1000-8000-00805F9B34FB
     // This is because the gatt specifications only list the assigned number as these 4 digits of the UUID:
     // https://www.bluetooth.com/specifications/gatt
     private static String GetUUIDSubstring(String uuid)
     {
-        if (uuid == null) return null;
+        if (uuid == null) return "";
+
+        uuid = uuid.toUpperCase();
 
         // If UUID is already a substring, just return it.
         if (uuid.length() == 4)
@@ -178,13 +180,38 @@ public class Constants {
             return uuid;
         }
 
-        // Ensure UUID is of proper length (slashes included).
-        if (uuid.length() != 36) return null;
+        if (!HasBaseUUID(uuid)) return "";
 
         return uuid.substring(4, 8);
     }
 
-    static {
+    public static String AddBaseUUID(String uuid)
+    {
+        if (uuid.length() != 4)
+        {
+            return null;
+        }
+
+        return BASE_UUID.substring(0, 4) + uuid.toUpperCase() + BASE_UUID.substring(8);
+    }
+
+    private static boolean HasBaseUUID(String uuid)
+    {
+        // Ensure UUID is of proper length (slashes included).
+        if (uuid.length() != 36) return false;
+
+        // Ensure UUID is formed with proper base address.
+        for (int i = 0; i < BASE_UUID.length(); i++)
+        {
+            if (BASE_UUID.charAt(i) == 'x') continue;
+            if (uuid.charAt(i) != BASE_UUID.charAt(i)) return false;
+        }
+
+        return true;
+    }
+
+    static
+    {
         services.put("1800", "Generic Access");
         services.put("1811", "Alert Notification Service");
         services.put("1815", "Automation IO");
@@ -227,11 +254,8 @@ public class Constants {
         services.put("1804", "Tx Power");
         services.put("181C", "User Data");
         services.put("181D", "Weight Scale");
-        services.put("181D", "Weight Scale");
         services.put("1D14D6EE-FD63-4FA1-BFA4-8F47B42119F0", "Silicon Labs OTA");
-    }
 
-    static {
         characteristics.put("2A7E", new Characteristic("2A7E", "Aerobic Heart Rate Lower Limit", CharacteristicReadType.STRING));
         characteristics.put("2A84", new Characteristic("2A84", "Aerobic Heart Rate Upper Limit", CharacteristicReadType.STRING));
         characteristics.put("2A7F", new Characteristic("2A7F", "Aerobic Threshold", CharacteristicReadType.STRING));
@@ -467,9 +491,7 @@ public class Constants {
         characteristics.put("2A9E", new Characteristic("2A9E", "Weight Scale Feature", CharacteristicReadType.STRING));
         characteristics.put("2A79", new Characteristic("2A79", "Wind Chill", CharacteristicReadType.STRING));
         characteristics.put("F7BF3564-FB6D-4E53-88A4-5E37E0326063", new Characteristic("F7BF3564-FB6D-4E53-88A4-5E37E0326063", "Silicon Labs OTA Control", CharacteristicReadType.STRING));
-    }
 
-    static {
         descriptors.put("2905", "Characteristic Aggregate Format");
         descriptors.put("2900", "Characteristic Extended Properties");
         descriptors.put("2904", "Characteristic Presentation Format");
@@ -487,7 +509,8 @@ public class Constants {
         descriptors.put("290A", "Value Trigger Setting");
     }
 
-    static {
+    static
+    {
         devices.add(new Device("00:0B:57:1A:88:EF", "Test Device", new ArrayList<Service>() {{
             add(new Service("28ccba6e-b38e-472a-a26b-a1c1ed9320da", "Test Sensor", new ArrayList<Characteristic>() {{
                 add(new Characteristic("934daf64-bbff-47d2-8df4-864e2589f019", "Temperature", CharacteristicReadType.INTEGER));

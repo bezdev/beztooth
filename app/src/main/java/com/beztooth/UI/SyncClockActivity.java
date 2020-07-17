@@ -2,13 +2,10 @@ package com.beztooth.UI;
 
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,34 +14,12 @@ import android.widget.TextView;
 
 import com.beztooth.Bluetooth.ConnectionManager;
 import com.beztooth.R;
+import com.beztooth.Util.Constants;
 
 public class SyncClockActivity extends BluetoothActivity
 {
     private static final String TAG = "SyncClockActivity";
-    private static final String CLOCK_DEVICE_PREFIX = "Clock";
-
-    private ConnectionManager m_ConnectionManager;
-    private boolean m_IsConnectionManagerBound;
-
-    // TODO: put this logic into BluetoothActivity
-    private ServiceConnection m_ConnectionManagerConnection = new ServiceConnection()
-    {
-        @Override
-        public void onServiceConnected(ComponentName className, IBinder service)
-        {
-            ConnectionManager.LocalBinder binder = (ConnectionManager.LocalBinder) service;
-            m_ConnectionManager = binder.getService();
-            m_IsConnectionManagerBound = true;
-
-            m_ConnectionManager.ScanDevices();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName className)
-        {
-            m_IsConnectionManagerBound = false;
-        }
-    };
+    private static final String CLOCK_DEVICE_PREFIX = "Sergei";
 
     private BroadcastReceiver m_BroadcastReceiver = new BroadcastReceiver()
     {
@@ -65,8 +40,10 @@ public class SyncClockActivity extends BluetoothActivity
                 ConnectionManager.Device device = m_ConnectionManager.GetDevice(intent.getStringExtra(ConnectionManager.ADDRESS));
                 if (device == null) return;
 
-                BluetoothGattCharacteristic c = device.GetCharacteristic(("00001805-0000-1000-8000-00805F9B34FB").toLowerCase(), ("00002A2B-0000-1000-8000-00805F9B34FB").toLowerCase());
+                BluetoothGattCharacteristic c = device.GetCharacteristic(Constants.AddBaseUUID("1805"), Constants.AddBaseUUID("2A2B"));
                 if (c == null) return;
+
+                // Set value to current time
                 c.setValue(ConnectionManager.GetTimeInBytes(System.currentTimeMillis()));
                 device.WriteCharacteristic(c);
                 device.Disconnect();
@@ -79,18 +56,6 @@ public class SyncClockActivity extends BluetoothActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_clock_sync);
-
-        m_IsConnectionManagerBound = false;
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(ConnectionManager.ON_DEVICE_SCANNED);
-        intentFilter.addAction(ConnectionManager.ON_DEVICE_CONNECTED);
-        intentFilter.addAction(ConnectionManager.ON_DEVICE_DISCONNECTED);
-        intentFilter.addAction(ConnectionManager.ON_SERVICES_DISCOVERED);
-        LocalBroadcastManager.getInstance(this).registerReceiver(m_BroadcastReceiver, intentFilter);
-
-        Intent intent = new Intent(this, ConnectionManager.class);
-        bindService(intent, m_ConnectionManagerConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -109,16 +74,24 @@ public class SyncClockActivity extends BluetoothActivity
     protected void onDestroy()
     {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(m_BroadcastReceiver);
-        unbindService(m_ConnectionManagerConnection);
-        m_IsConnectionManagerBound = false;
         super.onDestroy();
     }
 
+    @Override
+    protected void OnConnectionManagerConnected()
+    {
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ConnectionManager.ON_DEVICE_SCANNED);
+        intentFilter.addAction(ConnectionManager.ON_DEVICE_CONNECTED);
+        intentFilter.addAction(ConnectionManager.ON_DEVICE_DISCONNECTED);
+        intentFilter.addAction(ConnectionManager.ON_SERVICES_DISCOVERED);
+        LocalBroadcastManager.getInstance(this).registerReceiver(m_BroadcastReceiver, intentFilter);
+
+        m_ConnectionManager.ScanDevices();
+    }
 
     private void AddDevice(String address)
     {
-        if (!m_IsConnectionManagerBound) return;
-
         ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
         if (device == null) return;
 
@@ -146,7 +119,7 @@ public class SyncClockActivity extends BluetoothActivity
         BezContainer container = view.findViewById(R.id.device_select_container);
         container.setTag(device.GetAddress());
         container.setClickable(true);
-        container.SetOnClick(new BezContainer.OnClick()
+        container.SetOnClick(new ViewInputHandler.OnClick()
         {
             @Override
             public void Do(View view)
@@ -156,7 +129,7 @@ public class SyncClockActivity extends BluetoothActivity
                 ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
                 if (device == null) return;
 
-                device.Connect();
+                device.Connect(true, false);
             }
         });
 

@@ -3,7 +3,6 @@ package com.beztooth.UI;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.view.View;
 import android.widget.LinearLayout;
 
 public class BezContainer extends LinearLayout
@@ -11,13 +10,7 @@ public class BezContainer extends LinearLayout
     private final String TAG = "BezContainer";
 
     private Context m_Context;
-    private OnClick m_OnClick;
-    private boolean m_IsDown;
-
-    public interface OnClick
-    {
-        void Do(View view);
-    }
+    private ViewInputHandler m_InputHandler;
 
     public BezContainer(Context context)
     {
@@ -40,13 +33,14 @@ public class BezContainer extends LinearLayout
     private void Init(Context context)
     {
         m_Context = context;
-        m_IsDown = false;
-        m_OnClick = null;
+        m_InputHandler = new ViewInputHandler(context, this);
+
+        this.setClickable(true);
     }
 
-    public void SetOnClick(OnClick onClick)
+    public void SetOnClick(ViewInputHandler.OnClick onClick)
     {
-        m_OnClick = onClick;
+        m_InputHandler.SetOnClick(onClick);
     }
 
     @Override
@@ -54,36 +48,15 @@ public class BezContainer extends LinearLayout
     {
         super.onTouchEvent(event);
 
-        switch (event.getAction())
-        {
-            case MotionEvent.ACTION_DOWN:
-                if (!m_IsDown)
-                {
-                    BezAnimation.StartButtonDownAnimation(m_Context, this);
-                }
-
-                m_IsDown = true;
-                return true;
-
-            case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_CANCEL:
-                BezAnimation.StartButtonUpAnimation(m_Context, this);
-
-                m_IsDown = false;
-                return true;
-        }
-
-        return false;
+        return m_InputHandler.onTouchEvent(event);
     }
 
     @Override
     public boolean performClick()
     {
         super.performClick();
-        if (m_OnClick != null)
-        {
-            m_OnClick.Do(this);
-        }
+
+        m_InputHandler.performClick();
 
         return true;
     }

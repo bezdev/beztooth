@@ -25,7 +25,7 @@ public class Logger
             }
             else
             {
-                Log.d("TAG", String.format("[%s]: %s", tag, message));
+                Log.d(tag, message);
             }
         }
     }

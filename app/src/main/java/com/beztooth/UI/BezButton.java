@@ -4,20 +4,13 @@ import android.content.Context;
 import android.support.v7.widget.AppCompatButton;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.view.View;
 
 public class BezButton extends AppCompatButton
 {
     private final String TAG = "BezButton";
 
     private Context m_Context;
-    private OnClick m_OnClick;
-    private boolean m_IsDown;
-
-    public interface OnClick
-    {
-        void Do(View view);
-    }
+    private ViewInputHandler m_InputHandler;
 
     public BezButton(Context context)
     {
@@ -40,13 +33,12 @@ public class BezButton extends AppCompatButton
     private void Init(Context context)
     {
         m_Context = context;
-        m_IsDown = false;
-        m_OnClick = null;
+        m_InputHandler = new ViewInputHandler(context, this);
     }
 
-    public void SetOnClick(OnClick onClick)
+    public void SetOnClick(ViewInputHandler.OnClick onClick)
     {
-        m_OnClick = onClick;
+        m_InputHandler.SetOnClick(onClick);
     }
 
     @Override
@@ -54,27 +46,7 @@ public class BezButton extends AppCompatButton
     {
         super.onTouchEvent(event);
 
-        switch (event.getAction())
-        {
-            case MotionEvent.ACTION_DOWN:
-                if (!m_IsDown)
-                {
-                    BezAnimation.StartButtonDownAnimation(m_Context, this);
-                }
-
-                m_IsDown = true;
-                return true;
-
-            case MotionEvent.ACTION_UP:
-                performClick();
-            case MotionEvent.ACTION_CANCEL:
-                BezAnimation.StartButtonUpAnimation(m_Context, this);
-
-                m_IsDown = false;
-                return true;
-        }
-
-        return false;
+        return m_InputHandler.onTouchEvent(event);
     }
 
     @Override
@@ -82,10 +54,7 @@ public class BezButton extends AppCompatButton
     {
         super.performClick();
 
-        if (m_OnClick != null)
-        {
-            m_OnClick.Do(this);
-        }
+        m_InputHandler.performClick();
 
         return true;
     }

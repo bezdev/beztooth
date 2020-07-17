@@ -3,13 +3,10 @@ package com.beztooth.UI;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
@@ -29,70 +26,38 @@ public class DeviceActivity extends BluetoothActivity
 {
     public final static String TAG = "DeviceActivity";
 
-    private ConnectionManager m_ConnectionManager;
-    private boolean m_IsConnectionManagerBound;
-    private boolean m_AreServicesDiscovered;
-
     private ConnectionManager.Device m_Device;
+    private boolean m_AreServicesDiscovered;
     private String m_Address;
     private String m_Name;
-
-    private ServiceConnection m_ConnectionManagerConnection = new ServiceConnection()
-    {
-        @Override
-        public void onServiceConnected(ComponentName className, IBinder service)
-        {
-            ConnectionManager.LocalBinder binder = (ConnectionManager.LocalBinder) service;
-            m_ConnectionManager = binder.getService();
-
-            m_Device = m_ConnectionManager.GetDevice(m_Address);
-
-            if (m_Device == null || !m_Device.IsConnected())
-            {
-                m_ConnectionManager.ConnectDevice(m_Address);
-            }
-            else if (m_Device.IsConnected())
-            {
-                m_Device.DiscoverServices();
-            }
-
-            m_AreServicesDiscovered = false;
-            m_IsConnectionManagerBound = true;
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName className)
-        {
-            m_IsConnectionManagerBound = false;
-        }
-    };
 
     private BroadcastReceiver m_BroadcastReceiver = new BroadcastReceiver()
     {
         @Override
         public void onReceive(Context context, Intent intent)
         {
-            if (!m_IsConnectionManagerBound) return;
-
             String address = intent.getStringExtra(ConnectionManager.ADDRESS);
+            String action = intent.getAction();
 
             // Only process broadcasts for this device.
             if (address == null || !address.equals(m_Address)) return;
 
-            if (intent.getAction().equals(ConnectionManager.ON_DEVICE_CONNECTED))
+            Logger.Debug(TAG, "onReceive - " + address + " - " + action);
+
+            if (action.equals(ConnectionManager.ON_DEVICE_CONNECTED))
             {
                 m_Device = m_ConnectionManager.GetDevice(address);
             }
-            else if (intent.getAction().equals(ConnectionManager.ON_DEVICE_DISCONNECTED))
+            else if (action.equals(ConnectionManager.ON_DEVICE_DISCONNECTED))
             {
                 finish();
             }
-            else if (intent.getAction().equals(ConnectionManager.ON_SERVICES_DISCOVERED))
+            else if (action.equals(ConnectionManager.ON_SERVICES_DISCOVERED))
             {
                 ShowServices();
                 m_AreServicesDiscovered = true;
             }
-            else if (intent.getAction().equals(ConnectionManager.ON_CHARACTERISTIC_READ))
+            else if (action.equals(ConnectionManager.ON_CHARACTERISTIC_READ))
             {
                 if (!m_AreServicesDiscovered) return;
 
@@ -101,7 +66,7 @@ public class DeviceActivity extends BluetoothActivity
                 byte[] data = intent.getByteArrayExtra(ConnectionManager.DATA);
                 UpdateCharacteristicData(service, characteristic, data);
             }
-            else if (intent.getAction().equals(ConnectionManager.ON_DESCRIPTOR_READ))
+            else if (action.equals(ConnectionManager.ON_DESCRIPTOR_READ))
             {
                 if (!m_AreServicesDiscovered) return;
 
@@ -119,9 +84,6 @@ public class DeviceActivity extends BluetoothActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device);
 
-        m_IsConnectionManagerBound = false;
-        m_AreServicesDiscovered = false;
-
         Intent intent = getIntent();
         m_Name = intent.getStringExtra(ConnectionManager.NAME);
         m_Address = intent.getStringExtra(ConnectionManager.ADDRESS);
@@ -130,16 +92,6 @@ public class DeviceActivity extends BluetoothActivity
         toolbar.setTitle(m_Name);
 
         AddEventListeners();
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(ConnectionManager.ON_DEVICE_CONNECTED);
-        intentFilter.addAction(ConnectionManager.ON_DEVICE_DISCONNECTED);
-        intentFilter.addAction(ConnectionManager.ON_SERVICES_DISCOVERED);
-        intentFilter.addAction(ConnectionManager.ON_CHARACTERISTIC_READ);
-        LocalBroadcastManager.getInstance(this).registerReceiver(m_BroadcastReceiver, intentFilter);
-
-        intent = new Intent(this, ConnectionManager.class);
-        bindService(intent, m_ConnectionManagerConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -158,10 +110,33 @@ public class DeviceActivity extends BluetoothActivity
     protected void onDestroy()
     {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(m_BroadcastReceiver);
-        unbindService(m_ConnectionManagerConnection);
-        m_IsConnectionManagerBound = false;
-
         super.onDestroy();
+    }
+
+    @Override
+    protected void OnConnectionManagerConnected()
+    {
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ConnectionManager.ON_DEVICE_CONNECTED);
+        intentFilter.addAction(ConnectionManager.ON_DEVICE_DISCONNECTED);
+        intentFilter.addAction(ConnectionManager.ON_SERVICES_DISCOVERED);
+        intentFilter.addAction(ConnectionManager.ON_CHARACTERISTIC_READ);
+        LocalBroadcastManager.getInstance(this).registerReceiver(m_BroadcastReceiver, intentFilter);
+
+        m_Device = m_ConnectionManager.GetDevice(m_Address);
+        if (m_Device == null) finish();
+
+        if (!m_Device.IsConnected())
+        {
+            m_ConnectionManager.ConnectDevice(m_Device, true, true);
+        }
+
+        else if (m_Device.IsConnected())
+        {
+            // TODO: Show exisitng
+            m_AreServicesDiscovered = false;
+            m_Device.DiscoverServices();
+        }
     }
 
     private void AddEventListeners()
@@ -173,6 +148,7 @@ public class DeviceActivity extends BluetoothActivity
             public void onClick(View v)
             {
                 m_ConnectionManager.DisconnectDevice(m_Device);
+                finish();
             }
         });
     }
@@ -191,7 +167,7 @@ public class DeviceActivity extends BluetoothActivity
         }
         for (BluetoothGattService bgs : services)
         {
-            Constants.Device d = Constants.Devices.GetDevice(m_Address);
+            Constants.Device d = Constants.Devices.Get(m_Address);
             if (d != null)
             {
                 String knownService = Constants.Services.Get(m_Address, bgs.getUuid().toString(), true);
@@ -333,7 +309,7 @@ public class DeviceActivity extends BluetoothActivity
         }
     }
 
-    private class CharacteristicActionOnClick implements BezButton.OnClick
+    private class CharacteristicActionOnClick implements ViewInputHandler.OnClick
     {
         private String m_ServiceUUID;
         private String m_CharacteristicUUID;

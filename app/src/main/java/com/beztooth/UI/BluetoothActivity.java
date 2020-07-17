@@ -4,11 +4,14 @@ import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.widget.Toast;
 
@@ -22,8 +25,30 @@ public abstract class BluetoothActivity extends Activity {
     private static boolean s_WaitingOnEnableBluetoothRequest = false;
 
     protected Activity m_Activity;
+    protected ConnectionManager m_ConnectionManager;
+
     // Whether or not the Activity is currently visible.
     private boolean m_IsActive = false;
+    private boolean m_IsConnectionManagerBound;
+
+    private ServiceConnection m_ConnectionManagerConnection = new ServiceConnection()
+    {
+        @Override
+        public void onServiceConnected(ComponentName className, IBinder service)
+        {
+            ConnectionManager.LocalBinder binder = (ConnectionManager.LocalBinder) service;
+            m_ConnectionManager = binder.getService();
+            m_IsConnectionManagerBound = true;
+
+            OnConnectionManagerConnected();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName className)
+        {
+            m_IsConnectionManagerBound = false;
+        }
+    };
 
     private BroadcastReceiver m_BroadcastReceiver = new BroadcastReceiver()
     {
@@ -46,13 +71,18 @@ public abstract class BluetoothActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
         m_Activity = this;
+        m_IsConnectionManagerBound = false;
 
         CheckPermissions();
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ConnectionManager.ON_BLUETOOTH_DISABLED);
         LocalBroadcastManager.getInstance(this).registerReceiver(m_BroadcastReceiver, intentFilter);
+
+        Intent intent = new Intent(this, ConnectionManager.class);
+        bindService(intent, m_ConnectionManagerConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -87,27 +117,29 @@ public abstract class BluetoothActivity extends Activity {
     protected void onDestroy()
     {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(m_BroadcastReceiver);
+        unbindService(m_ConnectionManagerConnection);
+        m_IsConnectionManagerBound = false;
 
         super.onDestroy();
     }
 
-    private boolean CheckPermissions()
+    protected abstract void OnConnectionManagerConnected();
+
+    private void CheckPermissions()
     {
         // Determine whether BLE is supported on the device
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE))
         {
             Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
             finish();
-            return false;
+            return;
         }
 
         if (!HasLocationPermission())
         {
             RequestLocationPermission();
-            return false;
         }
 
-        return true;
     }
 
     private boolean HasLocationPermission()

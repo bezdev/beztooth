@@ -22,11 +22,17 @@ public class Beztooth extends BluetoothActivity
         startService(intent);
     }
 
+    @Override
+    protected void OnConnectionManagerConnected()
+    {
+
+    }
+
     private void AddEventListeners()
     {
         // Set event listeners
         BezButton button = findViewById(R.id.scanButton);
-        button.SetOnClick(new BezButton.OnClick()
+        button.SetOnClick(new ViewInputHandler.OnClick()
         {
             @Override
             public void Do(View view)
@@ -37,7 +43,7 @@ public class Beztooth extends BluetoothActivity
         });
 
         button = findViewById(R.id.clockSyncButton);
-        button.SetOnClick(new BezButton.OnClick()
+        button.SetOnClick(new ViewInputHandler.OnClick()
         {
             @Override
             public void Do(View view)

@@ -1,13 +1,10 @@
 package com.beztooth.UI;
 
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,28 +22,6 @@ import java.util.Iterator;
 public class DevicesActivity extends BluetoothActivity
 {
     private static final String TAG = "DevicesActivity";
-
-    private ConnectionManager m_ConnectionManager;
-    private boolean m_IsConnectionManagerBound;
-
-    private ServiceConnection m_ConnectionManagerConnection = new ServiceConnection()
-    {
-        @Override
-        public void onServiceConnected(ComponentName className, IBinder service)
-        {
-            ConnectionManager.LocalBinder binder = (ConnectionManager.LocalBinder) service;
-            m_ConnectionManager = binder.getService();
-            m_IsConnectionManagerBound = true;
-
-            Scan();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName className)
-        {
-            m_IsConnectionManagerBound = false;
-        }
-    };
 
     private BroadcastReceiver m_BroadcastReceiver = new BroadcastReceiver()
     {
@@ -66,8 +41,6 @@ public class DevicesActivity extends BluetoothActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_devices);
 
-        m_IsConnectionManagerBound = false;
-
         AddEventListeners();
 
         IntentFilter intentFilter = new IntentFilter();
@@ -75,9 +48,6 @@ public class DevicesActivity extends BluetoothActivity
         intentFilter.addAction(ConnectionManager.ON_DEVICE_CONNECTED);
         intentFilter.addAction(ConnectionManager.ON_DEVICE_DISCONNECTED);
         LocalBroadcastManager.getInstance(this).registerReceiver(m_BroadcastReceiver, intentFilter);
-
-        Intent intent = new Intent(this, ConnectionManager.class);
-        bindService(intent, m_ConnectionManagerConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -96,9 +66,13 @@ public class DevicesActivity extends BluetoothActivity
     protected void onDestroy()
     {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(m_BroadcastReceiver);
-        unbindService(m_ConnectionManagerConnection);
-        m_IsConnectionManagerBound = false;
         super.onDestroy();
+    }
+
+    @Override
+    protected void OnConnectionManagerConnected()
+    {
+        Scan();
     }
 
     private void AddEventListeners()
@@ -129,7 +103,7 @@ public class DevicesActivity extends BluetoothActivity
             View device = ll.findViewWithTag(deviceAddress);
             if (device == null)
             {
-                AddDevice(deviceAddress);
+                    AddDevice(deviceAddress);
             }
         }
 
@@ -138,8 +112,6 @@ public class DevicesActivity extends BluetoothActivity
 
     private void AddDevice(String address)
     {
-        if (!m_IsConnectionManagerBound) return;
-
         ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
         if (device == null) return;
 
@@ -166,8 +138,7 @@ public class DevicesActivity extends BluetoothActivity
         // Make clickable and set onClick event handler.
         BezContainer container = view.findViewById(R.id.device_select_container);
         container.setTag(device.GetAddress());
-        container.setClickable(true);
-        container.SetOnClick(new BezContainer.OnClick()
+        container.SetOnClick(new ViewInputHandler.OnClick()
         {
             @Override
             public void Do(View view)
@@ -176,7 +147,9 @@ public class DevicesActivity extends BluetoothActivity
                 Logger.Debug(TAG, "OnDeviceClick: " + address);
 
                 ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
-                if (device == null) return;
+                if (device == null) {
+                    return;
+                }
 
                 Intent intent = new Intent(view.getContext(), DeviceActivity.class);
                 intent.putExtra(ConnectionManager.ADDRESS, device.GetAddress());
@@ -191,8 +164,6 @@ public class DevicesActivity extends BluetoothActivity
 
     private void ClearDevices()
     {
-        if (!m_IsConnectionManagerBound) return;
-
         LinearLayout ll = findViewById(R.id.device_scroll);
         if (ll != null)
         {

@@ -89,14 +89,13 @@ public class ConnectionManager extends Service
     {
         private static final String TAG = "Device";
 
-        private static final boolean DISCOVER_WHEN_CONNECTED = true;
-        private static final boolean READ_WHEN_DISCOVERED = true;
-
         private String m_Name;
         private String m_Address;
         private BluetoothDevice m_Device;
         private BluetoothGatt m_Gatt;
         private int m_ConnectionState;
+        private boolean m_DiscoverServicesWhenConnected;
+        private boolean m_ReadCharacteristicsWhenDiscovered;
 
         // Queue of GattActions.  A device can only handle one request at a time, but from the UI
         // we might fire off several actions at once.  Need to dequeue after performing every action.
@@ -188,7 +187,7 @@ public class ConnectionManager extends Service
             @Override
             public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState)
             {
-                Logger.Debug(TAG, "onConnectionStateChange");
+                Log("onConnectionStateChange");
 
                 if (newState == STATE_CONNECTED)
                 {
@@ -196,7 +195,7 @@ public class ConnectionManager extends Service
                     m_ConnectedDevices.add(m_Address);
                     BroadcastOnDeviceConnected(m_Address);
 
-                    if (DISCOVER_WHEN_CONNECTED)
+                    if (m_DiscoverServicesWhenConnected)
                     {
                         DiscoverServices();
                         return;
@@ -217,18 +216,16 @@ public class ConnectionManager extends Service
             {
                 m_Gatt = gatt;
 
-                Logger.Debug(TAG, "OnServicesDiscovered: " + m_Address);
-                Logger.Debug(TAG, "number of services: " + gatt.getServices().size());
+                Log("OnServicesDiscovered (" + gatt.getServices().size() + "): " + m_Address);
 
                 for (BluetoothGattService s : gatt.getServices())
                 {
-                    Logger.Debug(TAG, "service uuid: " + s.getUuid());
+                    Log("Service: " + s.getUuid());
                     for (BluetoothGattCharacteristic c : s.getCharacteristics())
                     {
-                        Logger.Debug(TAG, " characteristic uuid: " + c.getUuid());
-                        Logger.Debug(TAG, " properties: " + c.getProperties());
+                        Log(" Characteristic (properties: " + c.getProperties() + "): " + c.getUuid());
 
-                        if (READ_WHEN_DISCOVERED)
+                        if (m_ReadCharacteristicsWhenDiscovered)
                         {
                             for (BluetoothGattDescriptor d : c.getDescriptors())
                             {
@@ -255,8 +252,7 @@ public class ConnectionManager extends Service
             public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
                 m_Gatt = gatt;
 
-                Logger.Debug(TAG, "onCharacteristicRead: " + characteristic.getUuid());
-                Logger.Debug(TAG, characteristic.getValue().length + " byte(s)");
+                Log("onCharacteristicRead: " + characteristic.getUuid() + " - " + characteristic.getValue().length + " byte(s)");
 
                 BroadcastOnCharacteristicRead(
                     characteristic.getService().getUuid().toString(),
@@ -269,7 +265,7 @@ public class ConnectionManager extends Service
             @Override
             public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status)
             {
-                Logger.Debug(TAG, "onCharacteristicWrite");
+                Log("onCharacteristicWrite");
 
                 m_Gatt = gatt;
 
@@ -279,7 +275,7 @@ public class ConnectionManager extends Service
             @Override
             public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic)
             {
-                Logger.Debug(TAG, "onCharacteristicChanged");
+                Log("onCharacteristicChanged");
 
                 m_Gatt = gatt;
 
@@ -291,7 +287,7 @@ public class ConnectionManager extends Service
             {
                 m_Gatt = gatt;
 
-                Logger.Debug(TAG, "onDescriptorRead: (c: " + descriptor.getCharacteristic().getUuid().toString() + "): " + descriptor.getValue().length + " byte(s): " + new String(descriptor.getValue()));
+                Log("onDescriptorRead: (c: " + descriptor.getCharacteristic().getUuid().toString() + "): " + descriptor.getValue().length + " byte(s): " + new String(descriptor.getValue()));
 
                 BroadcastOnDescriptorRead(
                         descriptor.getCharacteristic().getService().getUuid().toString(),
@@ -304,7 +300,7 @@ public class ConnectionManager extends Service
             @Override
             public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status)
             {
-                Logger.Debug(TAG, "onDescriptorWrite");
+                Log("onDescriptorWrite");
 
                 m_Gatt = gatt;
 
@@ -314,7 +310,7 @@ public class ConnectionManager extends Service
             @Override
             public void onMtuChanged(BluetoothGatt gatt, int mtu, int status)
             {
-                Logger.Debug(TAG, "onMtuChanged");
+                Log("onMtuChanged");
 
                 m_Gatt = gatt;
 
@@ -324,7 +320,7 @@ public class ConnectionManager extends Service
             @Override
             public void onPhyRead(BluetoothGatt gatt, int txPhy, int rxPhy, int status)
             {
-                Logger.Debug(TAG, "onConnectionStateChange");
+                Log("onConnectionStateChange");
 
                 m_Gatt = gatt;
 
@@ -334,7 +330,7 @@ public class ConnectionManager extends Service
             @Override
             public void onPhyUpdate(BluetoothGatt gatt, int txPhy, int rxPhy, int status)
             {
-                Logger.Debug(TAG, "onPhyUpdate");
+                Log("onPhyUpdate");
 
                 m_Gatt = gatt;
 
@@ -344,7 +340,7 @@ public class ConnectionManager extends Service
             @Override
             public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status)
             {
-                Logger.Debug(TAG, "onReadRemoteRssi");
+                Log("onReadRemoteRssi");
 
                 m_Gatt = gatt;
 
@@ -354,7 +350,7 @@ public class ConnectionManager extends Service
             @Override
             public void onReliableWriteCompleted(BluetoothGatt gatt, int status)
             {
-                Logger.Debug(TAG, "onReliableWriteCompleted");
+                Log("onReliableWriteCompleted");
 
                 m_Gatt = gatt;
 
@@ -372,14 +368,21 @@ public class ConnectionManager extends Service
             m_Name = (bluetoothDevice.getName() == null) ? bluetoothDevice.getAddress() : bluetoothDevice.getName();
             m_Address = bluetoothDevice.getAddress();
 
+            m_DiscoverServicesWhenConnected = false;
+            m_ReadCharacteristicsWhenDiscovered = false;
+
             m_GattActionQueue = new LinkedList<>();
         }
 
-        public void Connect()
+        public void Connect(boolean discoverServicesWhenConnected, boolean readCharacteristicsWhenDiscovered)
         {
             if (IsConnected()) return;
 
+            m_DiscoverServicesWhenConnected = discoverServicesWhenConnected;
+            m_ReadCharacteristicsWhenDiscovered = readCharacteristicsWhenDiscovered;
             m_Gatt = m_Device.connectGatt(m_Context, true, c_BluetoothGattCallback);
+
+            Log("Connect");
         }
 
         public void Disconnect()
@@ -461,7 +464,7 @@ public class ConnectionManager extends Service
 
         private void QueueGattAction(GattAction action)
         {
-            Logger.Debug(TAG, "QueueGattAction (" + m_GattActionQueue.size() + " items in queue): " + action.getClass());
+            Log("QueueGattAction (" + m_GattActionQueue.size() + " items in queue): " + GetGattAction(action.getClass().toString()));
 
             m_GattActionQueue.add(action);
 
@@ -473,13 +476,17 @@ public class ConnectionManager extends Service
 
         private void DequeueGattAction()
         {
-            Logger.Debug(TAG, "DequeueGattAction: " + (m_GattActionQueue.peek() == null ? "null" : m_GattActionQueue.peek().getClass()));
+            Log("DequeueGattAction (" + m_GattActionQueue.size() + " items in queue): " + (m_GattActionQueue.size() == 0 ? "null" : GetGattAction(m_GattActionQueue.peek().getClass().toString())));
 
             if (m_GattActionQueue.size() == 0) return;
             m_GattActionQueue.remove();
             if (m_GattActionQueue.size() == 0) return;
 
             m_GattActionQueue.peek().Do();
+        }
+
+        private String GetGattAction(String className) {
+            return className.substring(className.lastIndexOf('$') + 1);
         }
 
         private void BroadcastOnServicesDiscovered()
@@ -525,6 +532,11 @@ public class ConnectionManager extends Service
             Intent intent = new Intent(ON_DEVICE_DISCONNECTED);
             intent.putExtra(ADDRESS, address);
             LocalBroadcastManager.getInstance(m_Context).sendBroadcast(intent);
+        }
+
+        private void Log(String message)
+        {
+            Logger.Debug(TAG + " " + m_Address, message);
         }
     }
 
@@ -626,12 +638,13 @@ public class ConnectionManager extends Service
                 if (m_Devices.containsKey(bluetoothDevice.getAddress())) return;
 
                 Device device = new Device(bluetoothDevice);
-                m_Devices.put(device.GetAddress(), device);
+                String deviceName = device.GetName();
+                String deviceAddress = device.GetAddress();
+                m_Devices.put(deviceAddress, device);
 
-                BroadcastOnDeviceScanned(device.GetName(), device.GetAddress());
+                BroadcastOnDeviceScanned(deviceName, deviceAddress);
 
-                Logger.Debug(TAG, "Connectable Device Found: " + device.GetAddress());
-                Logger.Debug(TAG, "Device name: " + device.GetName());
+                Logger.Debug(TAG, "Connectable Device Found: " + deviceAddress + (deviceName != deviceAddress ? " - " + deviceName : ""));
             }
         }
     };
@@ -721,12 +734,7 @@ public class ConnectionManager extends Service
         return m_Devices;
     }
 
-    public void ConnectDevice(String address)
-    {
-        ConnectDevice(m_Devices.get(address));
-    }
-
-    public void ConnectDevice(Device device)
+    public void ConnectDevice(Device device, boolean discoverServicesWhenConnected, boolean readCharacteristicsWhenDiscovered)
     {
         if (!Initialize()) return;
         if (device == null) return;
@@ -734,12 +742,7 @@ public class ConnectionManager extends Service
 
         // Clear gatt queue in case there are some unprocessed events
         device.ClearGattActionQueue();
-        device.Connect();
-    }
-
-    public void DisconnectDevice(String address)
-    {
-        DisconnectDevice(m_Devices.get(address));
+        device.Connect(discoverServicesWhenConnected, readCharacteristicsWhenDiscovered);
     }
 
     public void DisconnectDevice(Device device)
