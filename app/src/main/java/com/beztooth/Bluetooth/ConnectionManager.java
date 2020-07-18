@@ -128,6 +128,22 @@ public class ConnectionManager extends Service
             }
         }
 
+        private class GattWriteCharacteristic implements GattAction
+        {
+            private BluetoothGattCharacteristic m_Characteristic;
+
+            public GattWriteCharacteristic(BluetoothGattCharacteristic characteristic)
+            {
+                m_Characteristic = characteristic;
+            }
+
+            @Override
+            public void Do()
+            {
+                m_Gatt.writeCharacteristic(m_Characteristic);
+            }
+        }
+
         private class GattDisconnect implements GattAction
         {
             @Override
@@ -149,22 +165,6 @@ public class ConnectionManager extends Service
             }
         }
 
-        private class GattWriteCharacteristic implements GattAction
-        {
-            private BluetoothGattCharacteristic m_Characteristic;
-
-            public GattWriteCharacteristic(BluetoothGattCharacteristic characteristic)
-            {
-                m_Characteristic = characteristic;
-            }
-
-            @Override
-            public void Do()
-            {
-                m_Gatt.writeCharacteristic(m_Characteristic);
-            }
-        }
-
         private class GattReadDescriptor implements GattAction
         {
             private BluetoothGattDescriptor m_Descriptor;
@@ -178,6 +178,40 @@ public class ConnectionManager extends Service
             public void Do()
             {
                 m_Gatt.readDescriptor(m_Descriptor);
+            }
+        }
+
+        private class GattWriteDescriptor implements GattAction
+        {
+            private BluetoothGattDescriptor m_Descriptor;
+
+            public GattWriteDescriptor(BluetoothGattDescriptor descriptor)
+            {
+                m_Descriptor = descriptor;
+            }
+
+            @Override
+            public void Do()
+            {
+                m_Gatt.writeDescriptor(m_Descriptor);
+            }
+        }
+
+        private class GattSetCharacteristicNotification implements GattAction
+        {
+            private BluetoothGattCharacteristic m_Characteristic;
+            private boolean m_Enable;
+
+            public GattSetCharacteristicNotification(BluetoothGattCharacteristic characteristic, boolean enable)
+            {
+                m_Characteristic = characteristic;
+                m_Enable = enable;
+            }
+
+            @Override
+            public void Do()
+            {
+                m_Gatt.setCharacteristicNotification(m_Characteristic, m_Enable);
             }
         }
 
@@ -265,9 +299,9 @@ public class ConnectionManager extends Service
             @Override
             public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status)
             {
-                Log("onCharacteristicWrite");
-
                 m_Gatt = gatt;
+
+                Log("onCharacteristicWrite");
 
                 DequeueGattAction();
             }
@@ -275,9 +309,14 @@ public class ConnectionManager extends Service
             @Override
             public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic)
             {
+                m_Gatt = gatt;
+
                 Log("onCharacteristicChanged");
 
-                m_Gatt = gatt;
+                BroadcastOnCharacteristicRead(
+                        characteristic.getService().getUuid().toString(),
+                        characteristic.getUuid().toString(),
+                        characteristic.getValue());
 
                 DequeueGattAction();
             }
@@ -420,16 +459,42 @@ public class ConnectionManager extends Service
             QueueGattAction(new GattReadDescriptor(descriptor));
         }
 
+        public void WriteDescriptor(BluetoothGattDescriptor descriptor)
+        {
+            if (!IsConnected()) return;
+
+            QueueGattAction(new GattWriteDescriptor(descriptor));
+        }
+
         public BluetoothGattService GetService(String service)
         {
             return m_Gatt.getService(UUID.fromString(service));
         }
 
-        public BluetoothGattCharacteristic GetCharacteristic(String service, String characteristic)
+        public BluetoothGattCharacteristic GetCharacteristic(String serviceUUID, String characteristicUUID)
         {
-            BluetoothGattService s = GetService(service);
+            BluetoothGattService s = GetService(serviceUUID);
             if (s == null) return null;
-            return s.getCharacteristic(UUID.fromString(characteristic));
+            return s.getCharacteristic(UUID.fromString(characteristicUUID));
+        }
+
+        public void SetCharacteristicNotification(BluetoothGattCharacteristic characteristic, boolean enable)
+        {
+            if (!IsConnected()) return;
+
+            if (characteristic == null) return;
+
+            // TODO: add validation to make sure characteristic supports notify
+
+            // Get Client Characteristic Configuration descriptor
+            BluetoothGattDescriptor d = characteristic.getDescriptor(UUID.fromString(Constants.AddBaseUUID("2902")));
+            if (d == null) return;
+
+            //QueueGattAction(new GattSetCharacteristicNotification(characteristic, enable));
+            // TODO: figure out why this doesn't produce a BluetoothGattCallback
+            m_Gatt.setCharacteristicNotification(characteristic, enable);
+            d.setValue(enable ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : new byte[] { 0x00, 0x00 });
+            WriteDescriptor(d);
         }
 
         public boolean IsConnected()

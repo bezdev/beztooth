@@ -133,7 +133,7 @@ public class DeviceActivity extends BluetoothActivity
 
         else if (m_Device.IsConnected())
         {
-            // TODO: Show exisitng
+            // TODO: Show existing
             m_AreServicesDiscovered = false;
             m_Device.DiscoverServices();
         }
@@ -338,7 +338,7 @@ public class DeviceActivity extends BluetoothActivity
             }
             else if (action == BluetoothGattCharacteristic.PROPERTY_NOTIFY)
             {
-                // TODO
+                m_Device.SetCharacteristicNotification(m_Device.GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID), true);
             }
         }
     };

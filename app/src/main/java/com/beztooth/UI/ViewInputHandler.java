@@ -5,12 +5,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.Animation;
 
-import com.beztooth.Util.Logger;
-
 public class ViewInputHandler
 {
-    private final String TAG = "BezContainer";
-
     interface OnClick
     {
         void Do(View view);
@@ -39,7 +35,6 @@ public class ViewInputHandler
             case MotionEvent.ACTION_DOWN:
                 if (!m_IsDown)
                 {
-                    Logger.Debug(TAG, "ACTION_DOWN");
                     BezAnimation.StartButtonDownAnimation(m_Context, m_View);
                 }
 
@@ -48,8 +43,6 @@ public class ViewInputHandler
                 return true;
 
             case MotionEvent.ACTION_UP:
-                Logger.Debug(TAG, "ACTION_UP");
-
                 this.performClick();
                 BezAnimation.StartButtonUpAnimation(m_Context, m_View, new Animation.AnimationListener()
                 {
@@ -68,7 +61,6 @@ public class ViewInputHandler
                     {
                         if (m_OnClick != null)
                         {
-                            Logger.Debug(TAG, "onAnimationEnd");
                             m_OnClick.Do(m_View);
                         }
                     }
@@ -79,7 +71,6 @@ public class ViewInputHandler
 
                 return true;
             case MotionEvent.ACTION_CANCEL:
-                Logger.Debug(TAG, "ACTION_CANCEL");
                 BezAnimation.StartButtonUpAnimation(m_Context, m_View);
 
                 m_IsDown = false;
@@ -91,7 +82,6 @@ public class ViewInputHandler
 
     public void performClick()
     {
-        Logger.Debug(TAG, "performClick");
         if (m_OnClick != null && !m_IsDown && !m_WasPressed)
         {
             m_OnClick.Do(m_View);
