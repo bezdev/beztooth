@@ -23,12 +23,12 @@
         android:textSize="36sp"
         android:textStyle="bold" />
     <com.beztooth.UI.BezButton
-        android:id="@+id/clockSyncButton"
+        android:id="@+id/syncClockButton"
         android:layout_width="match_parent"
         android:layout_height="120dp"
         android:layout_margin="20dp"
         android:background="@drawable/select_border"
-        android:text="Clock Sync"
+        android:text="Sync Clock"
         android:textColor="@color/BezBlue"
         android:textSize="36sp"
         android:textStyle="bold" />

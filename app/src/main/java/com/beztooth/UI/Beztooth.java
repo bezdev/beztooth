@@ -42,7 +42,7 @@ public class Beztooth extends BluetoothActivity
             }
         });
 
-        button = findViewById(R.id.clockSyncButton);
+        button = findViewById(R.id.syncClockButton);
         button.SetOnClick(new ViewInputHandler.OnClick()
         {
             @Override

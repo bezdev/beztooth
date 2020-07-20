@@ -47,11 +47,14 @@ public class ConnectionManager extends Service
 {
     // Broadcast Events
     public final static String ON_BLUETOOTH_DISABLED = "beztooth.Device.ON_BLUETOOTH_DISABLED";
+    public final static String ON_SCAN_STARTED = "beztooth.Device.ON_SCAN_STARTED";
+    public final static String ON_SCAN_STOPPED = "beztooth.Device.ON_SCAN_STOPPED";
     public final static String ON_DEVICE_SCANNED = "beztooth.ON_DEVICE_SCANNED";
     public final static String ON_DEVICE_CONNECTED = "beztooth.Device.ON_DEVICE_CONNECTED";
     public final static String ON_DEVICE_DISCONNECTED = "beztooth.Device.ON_DEVICE_DISCONNECTED";
     public final static String ON_SERVICES_DISCOVERED = "beztooth.Device.ON_SERVICES_DISCOVERED";
     public final static String ON_CHARACTERISTIC_READ = "beztooth.Device.ON_CHARACTERISTIC_READ";
+    public final static String ON_CHARACTERISTIC_WRITE = "beztooth.Device.ON_CHARACTERISTIC_WRITE";
     public final static String ON_DESCRIPTOR_READ = "beztooth.Device.ON_DESCRIPTOR_READ";
 
     // Broadcast Data
@@ -65,6 +68,7 @@ public class ConnectionManager extends Service
 
     private static final int SCAN_TIME = 10000;
 
+    private Handler m_ScanHandler;
     private BluetoothAdapter m_BluetoothAdapter;
     private BluetoothLeScanner m_BluetoothLeScanner;
 
@@ -197,24 +201,6 @@ public class ConnectionManager extends Service
             }
         }
 
-        private class GattSetCharacteristicNotification implements GattAction
-        {
-            private BluetoothGattCharacteristic m_Characteristic;
-            private boolean m_Enable;
-
-            public GattSetCharacteristicNotification(BluetoothGattCharacteristic characteristic, boolean enable)
-            {
-                m_Characteristic = characteristic;
-                m_Enable = enable;
-            }
-
-            @Override
-            public void Do()
-            {
-                m_Gatt.setCharacteristicNotification(m_Characteristic, m_Enable);
-            }
-        }
-
         // Device callbacks.
         private final BluetoothGattCallback c_BluetoothGattCallback = new BluetoothGattCallback()
         {
@@ -302,6 +288,11 @@ public class ConnectionManager extends Service
                 m_Gatt = gatt;
 
                 Log("onCharacteristicWrite");
+
+                BroadcastOnCharacteristicWrite(
+                        characteristic.getService().getUuid().toString(),
+                        characteristic.getUuid().toString(),
+                        characteristic.getValue());
 
                 DequeueGattAction();
             }
@@ -490,9 +481,10 @@ public class ConnectionManager extends Service
             BluetoothGattDescriptor d = characteristic.getDescriptor(UUID.fromString(Constants.AddBaseUUID("2902")));
             if (d == null) return;
 
-            //QueueGattAction(new GattSetCharacteristicNotification(characteristic, enable));
-            // TODO: figure out why this doesn't produce a BluetoothGattCallback
+            // Enable notify on client
             m_Gatt.setCharacteristicNotification(characteristic, enable);
+
+            // Enable notify on server
             d.setValue(enable ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : new byte[] { 0x00, 0x00 });
             WriteDescriptor(d);
         }
@@ -566,6 +558,18 @@ public class ConnectionManager extends Service
             if (value.length == 0) return;
 
             Intent intent = new Intent(ON_CHARACTERISTIC_READ);
+            intent.putExtra(ADDRESS, m_Address);
+            intent.putExtra(SERVICE, service);
+            intent.putExtra(CHARACTERISTIC, uuid);
+            intent.putExtra(DATA, value);
+            LocalBroadcastManager.getInstance(m_Context).sendBroadcast(intent);
+        }
+
+        private void BroadcastOnCharacteristicWrite(String service, String uuid, byte[] value)
+        {
+            if (value.length == 0) return;
+
+            Intent intent = new Intent(ON_CHARACTERISTIC_WRITE);
             intent.putExtra(ADDRESS, m_Address);
             intent.putExtra(SERVICE, service);
             intent.putExtra(CHARACTERISTIC, uuid);
@@ -723,6 +727,13 @@ public class ConnectionManager extends Service
             final BluetoothManager bluetoothManager = (BluetoothManager) m_Context.getSystemService(Context.BLUETOOTH_SERVICE);
             m_BluetoothAdapter = bluetoothManager.getAdapter();
 
+            if (m_ScanHandler != null)
+            {
+                // Remove all queued messages
+                m_ScanHandler.removeCallbacksAndMessages(null);
+            }
+
+            m_ScanHandler = new Handler();
             m_IsScanning = false;
         }
 
@@ -734,12 +745,15 @@ public class ConnectionManager extends Service
             return false;
         }
 
-        m_BluetoothLeScanner = m_BluetoothAdapter.getBluetoothLeScanner();
         if (m_BluetoothLeScanner == null)
         {
-            BroadcastOnBluetoothDisabled();
-            m_IsInitialized = false;
-            return false;
+            m_BluetoothLeScanner = m_BluetoothAdapter.getBluetoothLeScanner();
+            if (m_BluetoothLeScanner == null)
+            {
+                BroadcastOnBluetoothDisabled();
+                m_IsInitialized = false;
+                return false;
+            }
         }
 
         m_IsInitialized = true;
@@ -751,42 +765,74 @@ public class ConnectionManager extends Service
         return m_Devices.get(address);
     }
 
-    public void ScanDevices()
+    // Scan for Bluetooth LE devices.
+    public void Scan()
     {
         if (!Initialize()) return;
-        if (m_IsScanning) return;
 
-        // Remove all devices that aren't connected.
-        HashSet<String> connectedDevices = GetConnectedDevices();
-        Iterator it = m_Devices.entrySet().iterator();
-        while (it.hasNext())
+        // Fresh scan, need to remove all devices that aren't connected since a new scan will not
+        // show devices that are already connected.
+        if (!m_IsScanning)
         {
-            Map.Entry pair = (Map.Entry)it.next();
-            if (!connectedDevices.contains(pair.getKey().toString()))
+            HashSet<String> connectedDevices = GetConnectedDevices();
+            Iterator it = m_Devices.entrySet().iterator();
+            while (it.hasNext())
             {
-                it.remove();
+                Map.Entry pair = (Map.Entry) it.next();
+                if (!connectedDevices.contains(pair.getKey().toString()))
+                {
+                    it.remove();
+                }
             }
+
+            // Start scan
+            LinkedList<ScanFilter> filters = new LinkedList<>();
+            ScanSettings settings = (new ScanSettings.Builder().setCallbackType(CALLBACK_TYPE_ALL_MATCHES).setScanMode(SCAN_MODE_LOW_LATENCY).build());
+            m_BluetoothLeScanner.startScan(filters, settings, m_ScanCallback);
+
+            BroadcastScanStarted();
         }
 
-        LinkedList<ScanFilter> filters = new LinkedList<>();
-        ScanSettings settings = (new ScanSettings.Builder().setCallbackType(CALLBACK_TYPE_ALL_MATCHES).setScanMode(SCAN_MODE_LOW_LATENCY).build());
+        // Remove all queued StopScan handlers
+        m_ScanHandler.removeCallbacksAndMessages(null);
 
-        m_IsScanning = true;
-        m_BluetoothLeScanner.startScan(filters, settings, m_ScanCallback);
-
-        new Handler().postDelayed(new Runnable()
+        // Add new StopScan handler
+        m_ScanHandler.postDelayed(new Runnable()
         {
             @Override
             public void run()
             {
-                if (Initialize())
+                if (Initialize() && m_IsScanning)
                 {
                     m_BluetoothLeScanner.stopScan(m_ScanCallback);
                 }
 
                 m_IsScanning = false;
+
+                BroadcastScanStopped();
             }
         }, SCAN_TIME);
+
+        m_IsScanning = true;
+    }
+
+    public void StopScan()
+    {
+        if (!Initialize() || !m_IsScanning) return;
+
+        // Remove all queued StopScan handlers
+        m_ScanHandler.removeCallbacksAndMessages(null);
+
+        m_BluetoothLeScanner.stopScan(m_ScanCallback);
+
+        m_IsScanning = false;
+
+        BroadcastScanStopped();
+    }
+
+    public boolean IsScanning()
+    {
+        return m_IsScanning;
     }
 
     public HashSet<String> GetConnectedDevices()
@@ -794,6 +840,7 @@ public class ConnectionManager extends Service
         return m_ConnectedDevices;
     }
 
+    // TODO: make this thread safe
     public HashMap<String, Device> GetDevices()
     {
         return m_Devices;
@@ -931,6 +978,18 @@ public class ConnectionManager extends Service
     private void BroadcastOnBluetoothDisabled()
     {
         Intent intent = new Intent(ON_BLUETOOTH_DISABLED);
+        LocalBroadcastManager.getInstance(m_Context).sendBroadcast(intent);
+    }
+
+    private void BroadcastScanStarted()
+    {
+        Intent intent = new Intent(ON_SCAN_STARTED);
+        LocalBroadcastManager.getInstance(m_Context).sendBroadcast(intent);
+    }
+
+    private void BroadcastScanStopped()
+    {
+        Intent intent = new Intent(ON_SCAN_STOPPED);
         LocalBroadcastManager.getInstance(m_Context).sendBroadcast(intent);
     }
 

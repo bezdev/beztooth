@@ -7,10 +7,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
-import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.TextView;
+import android.widget.ProgressBar;
 
 import com.beztooth.Bluetooth.ConnectionManager;
 import com.beztooth.R;
@@ -21,12 +21,25 @@ public class SyncClockActivity extends BluetoothActivity
     private static final String TAG = "SyncClockActivity";
     private static final String CLOCK_DEVICE_PREFIX = "Sergei";
 
+    private ProgressBar m_ScanProgress;
+    private DeviceSelectView m_DeviceSelectView;
+
     private BroadcastReceiver m_BroadcastReceiver = new BroadcastReceiver()
     {
         @Override
         public void onReceive(Context context, Intent intent)
         {
-            if (intent.getAction().equals(ConnectionManager.ON_DEVICE_SCANNED))
+            String action = intent.getAction();
+
+            if (action.equals(ConnectionManager.ON_SCAN_STARTED))
+            {
+                m_ScanProgress.setVisibility(View.VISIBLE);
+            }
+            else if (action.equals(ConnectionManager.ON_SCAN_STOPPED))
+            {
+                m_ScanProgress.setVisibility(View.GONE);
+            }
+            else if (action.equals(ConnectionManager.ON_DEVICE_SCANNED))
             {
                 if (!intent.getStringExtra(ConnectionManager.NAME).startsWith(CLOCK_DEVICE_PREFIX))
                 {
@@ -35,7 +48,7 @@ public class SyncClockActivity extends BluetoothActivity
 
                 AddDevice(intent.getStringExtra(ConnectionManager.ADDRESS));
             }
-            else if (intent.getAction().equals(ConnectionManager.ON_SERVICES_DISCOVERED))
+            else if (action.equals(ConnectionManager.ON_SERVICES_DISCOVERED))
             {
                 ConnectionManager.Device device = m_ConnectionManager.GetDevice(intent.getStringExtra(ConnectionManager.ADDRESS));
                 if (device == null) return;
@@ -48,6 +61,19 @@ public class SyncClockActivity extends BluetoothActivity
                 device.WriteCharacteristic(c);
                 device.Disconnect();
             }
+            else if (action.equals(ConnectionManager.ON_DEVICE_CONNECTED))
+            {
+                m_DeviceSelectView.OnDeviceConnectionStatusChanged(intent.getStringExtra(ConnectionManager.ADDRESS), true);
+            }
+            else if (action.equals(ConnectionManager.ON_DEVICE_DISCONNECTED))
+            {
+                m_DeviceSelectView.OnDeviceConnectionStatusChanged(intent.getStringExtra(ConnectionManager.ADDRESS), false);
+            }
+            else if (action.equals(ConnectionManager.ON_CHARACTERISTIC_WRITE))
+            {
+                String syncedTime = ConnectionManager.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.TIME);
+                m_DeviceSelectView.SetDeviceStatusMessage(intent.getStringExtra(ConnectionManager.ADDRESS), "Synced time: " + syncedTime);
+            }
         }
     };
 
@@ -55,7 +81,14 @@ public class SyncClockActivity extends BluetoothActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_clock_sync);
+        setContentView(R.layout.activity_sync_clock);
+
+        m_DeviceSelectView = new DeviceSelectView(getApplicationContext(), (LinearLayout)findViewById(R.id.device_scroll));
+
+        AddEventListeners();
+
+        m_ScanProgress = findViewById(R.id.scanProgress);
+        m_ScanProgress.setVisibility(View.GONE);
     }
 
     @Override
@@ -81,13 +114,36 @@ public class SyncClockActivity extends BluetoothActivity
     protected void OnConnectionManagerConnected()
     {
         IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ConnectionManager.ON_SCAN_STARTED);
+        intentFilter.addAction(ConnectionManager.ON_SCAN_STOPPED);
         intentFilter.addAction(ConnectionManager.ON_DEVICE_SCANNED);
         intentFilter.addAction(ConnectionManager.ON_DEVICE_CONNECTED);
         intentFilter.addAction(ConnectionManager.ON_DEVICE_DISCONNECTED);
         intentFilter.addAction(ConnectionManager.ON_SERVICES_DISCOVERED);
+        intentFilter.addAction(ConnectionManager.ON_CHARACTERISTIC_WRITE);
         LocalBroadcastManager.getInstance(this).registerReceiver(m_BroadcastReceiver, intentFilter);
 
-        m_ConnectionManager.ScanDevices();
+        Scan();
+    }
+
+    private void AddEventListeners()
+    {
+        // Scan onClick
+        Button button = findViewById(R.id.toolbarScanButton);
+        button.setOnClickListener(new View.OnClickListener()
+        {
+            public void onClick(View v)
+            {
+                Scan();
+            }
+        });
+    }
+
+    private void Scan()
+    {
+        m_ConnectionManager.StopScan();
+        m_DeviceSelectView.ClearDevices();
+        m_ConnectionManager.Scan();
     }
 
     private void AddDevice(String address)
@@ -95,31 +151,7 @@ public class SyncClockActivity extends BluetoothActivity
         ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
         if (device == null) return;
 
-        LinearLayout insertPoint = findViewById(R.id.device_scroll);
-
-        // If device is already visible, skip.
-        if (insertPoint.findViewWithTag(device.GetAddress()) != null)
-        {
-            return;
-        }
-
-        LayoutInflater vi = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View view = vi.inflate(R.layout.device_select, null);
-
-        // Set the device name and address, if there is no name, only display the address.
-        TextView textView = view.findViewById(R.id.device_select_name);
-        textView.setText(device.GetName());
-        if (!device.GetName().equals(device.GetAddress()))
-        {
-            textView = view.findViewById(R.id.device_select_mac);
-            textView.setText(device.GetAddress());
-        }
-
-        // Make clickable and set onClick event handler.
-        BezContainer container = view.findViewById(R.id.device_select_container);
-        container.setTag(device.GetAddress());
-        container.setClickable(true);
-        container.SetOnClick(new ViewInputHandler.OnClick()
+        m_DeviceSelectView.AddDevice(device.GetName(), device.GetAddress(), new ViewInputHandler.OnClick()
         {
             @Override
             public void Do(View view)
@@ -132,7 +164,5 @@ public class SyncClockActivity extends BluetoothActivity
                 device.Connect(true, false);
             }
         });
-
-        insertPoint.addView(view);
     }
 }

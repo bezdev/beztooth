@@ -12,18 +12,50 @@
         android:padding="20dp"
         android:background="@drawable/select_border"
         android:orientation="vertical">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight=".90"
+                android:orientation="vertical">
+                <TextView
+                    android:id="@+id/device_select_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/BezBlue"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/device_select_mac"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/uuidGray"
+                    android:textSize="16sp" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight=".10"
+                android:gravity="center">
+                <ImageView
+                    android:id="@+id/device_select_is_connected"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_bluetooth_connected_black_24dp"
+                    android:tint="@color/BezBlue"
+                    android:visibility="invisible" />
+            </LinearLayout>
+        </LinearLayout>
         <TextView
-            android:id="@+id/device_select_name"
+            android:id="@+id/device_select_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@color/BezBlue"
-            android:textSize="24sp"
-            android:textStyle="bold" />
-        <TextView
-            android:id="@+id/device_select_mac"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@color/uuidGray"
-            android:textSize="16sp" />
+            android:textSize="14dp"
+            android:visibility="gone" />
     </com.beztooth.UI.BezContainer>
 </com.beztooth.UI.BezContainer>
