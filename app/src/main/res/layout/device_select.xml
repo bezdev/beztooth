@@ -47,7 +47,15 @@
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_bluetooth_connected_black_24dp"
                     android:tint="@color/BezBlue"
-                    android:visibility="invisible" />
+                    android:visibility="gone" />
+                <ImageView
+                    android:id="@+id/device_select_is_timeout"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_close_black_24dp"
+                    android:tint="@color/red"
+                    android:visibility="gone" />
             </LinearLayout>
         </LinearLayout>
         <TextView

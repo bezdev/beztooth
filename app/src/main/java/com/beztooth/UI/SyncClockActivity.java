@@ -63,11 +63,11 @@ public class SyncClockActivity extends BluetoothActivity
             }
             else if (action.equals(ConnectionManager.ON_DEVICE_CONNECTED))
             {
-                m_DeviceSelectView.OnDeviceConnectionStatusChanged(intent.getStringExtra(ConnectionManager.ADDRESS), true);
+                m_DeviceSelectView.OnDeviceConnectionStatusChanged(intent.getStringExtra(ConnectionManager.ADDRESS), true, false);
             }
             else if (action.equals(ConnectionManager.ON_DEVICE_DISCONNECTED))
             {
-                m_DeviceSelectView.OnDeviceConnectionStatusChanged(intent.getStringExtra(ConnectionManager.ADDRESS), false);
+                m_DeviceSelectView.OnDeviceConnectionStatusChanged(intent.getStringExtra(ConnectionManager.ADDRESS), false, intent.getBooleanExtra(ConnectionManager.DATA, false));
             }
             else if (action.equals(ConnectionManager.ON_CHARACTERISTIC_WRITE))
             {

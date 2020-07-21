@@ -13,6 +13,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.beztooth.Bluetooth.ConnectionManager;
@@ -25,6 +26,8 @@ import java.util.List;
 public class DeviceActivity extends BluetoothActivity
 {
     public final static String TAG = "DeviceActivity";
+
+    private ProgressBar m_ConnectDiscoverProgress;
 
     private ConnectionManager.Device m_Device;
     private boolean m_AreServicesDiscovered;
@@ -54,6 +57,7 @@ public class DeviceActivity extends BluetoothActivity
             }
             else if (action.equals(ConnectionManager.ON_SERVICES_DISCOVERED))
             {
+                m_ConnectDiscoverProgress.setVisibility(View.GONE);
                 ShowServices();
                 m_AreServicesDiscovered = true;
             }
@@ -83,6 +87,9 @@ public class DeviceActivity extends BluetoothActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device);
+
+        m_ConnectDiscoverProgress = findViewById(R.id.connectDiscoverProgress);
+        m_ConnectDiscoverProgress.setVisibility(View.GONE);
 
         Intent intent = getIntent();
         m_Name = intent.getStringExtra(ConnectionManager.NAME);
@@ -130,13 +137,14 @@ public class DeviceActivity extends BluetoothActivity
         {
             m_ConnectionManager.ConnectDevice(m_Device, true, true);
         }
-
-        else if (m_Device.IsConnected())
+        else
         {
             // TODO: Show existing
             m_AreServicesDiscovered = false;
             m_Device.DiscoverServices();
         }
+
+        m_ConnectDiscoverProgress.setVisibility(View.VISIBLE);
     }
 
     private void AddEventListeners()

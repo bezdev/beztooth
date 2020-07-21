@@ -48,7 +48,7 @@ public class DeviceSelectView
         m_Root.addView(view);
     }
 
-    public void OnDeviceConnectionStatusChanged(String address, boolean isConnected)
+    public void OnDeviceConnectionStatusChanged(String address, boolean isConnected, boolean isTimeout)
     {
         View device = m_Root.findViewWithTag(address);
         if (device == null)
@@ -57,13 +57,19 @@ public class DeviceSelectView
         }
 
         View isConnectedImage = device.findViewById(R.id.device_select_is_connected);
+        View isTimeoutImage = device.findViewById(R.id.device_select_is_timeout);
         if (isConnected)
         {
             isConnectedImage.setVisibility(View.VISIBLE);
+            isTimeoutImage.setVisibility(View.GONE);
         }
         else
         {
-            isConnectedImage.setVisibility(View.INVISIBLE);
+            isConnectedImage.setVisibility(View.GONE);
+            if (isTimeout)
+            {
+                isTimeoutImage.setVisibility(View.VISIBLE);
+            }
         }
     }
 

@@ -63,10 +63,13 @@ public class ConnectionManager extends Service
     public final static String SERVICE = "beztooth.Device.SERVICE";
     public final static String CHARACTERISTIC = "beztooth.Device.CHARACTERISTIC";
     public final static String DATA = "beztooth.Device.DATA";
+    public final static String TIME = "beztooth.Device.TIME";
 
     private static final String TAG = "ConnectionManager";
 
-    private static final int SCAN_TIME = 10000;
+    private static final int SCAN_TIMEOUT = 10000;
+    private static final int CONNECT_DEVICE_TIMEOUT = 10000;
+    private static final int GATT_TIMEOUT = 5000;
 
     private Handler m_ScanHandler;
     private BluetoothAdapter m_BluetoothAdapter;
@@ -81,9 +84,11 @@ public class ConnectionManager extends Service
     private Context m_Context;
 
     // Used to queue Gatt actions since a Device will only handle one request at a time.
-    private interface GattAction
+    private interface IGattAction
     {
         void Do();
+        void Done();
+        void OnTimeout();
     }
 
     // Bluetooth Device.  Contains metadata about the device, connection state, and underlying
@@ -100,103 +105,193 @@ public class ConnectionManager extends Service
         private int m_ConnectionState;
         private boolean m_DiscoverServicesWhenConnected;
         private boolean m_ReadCharacteristicsWhenDiscovered;
+        private Handler m_GattTimeoutHandler;
+
+        private long m_ConnectTime;
+        private long m_OnConnectedTime;
 
         // Queue of GattActions.  A device can only handle one request at a time, but from the UI
         // we might fire off several actions at once.  Need to dequeue after performing every action.
         private LinkedList<GattAction> m_GattActionQueue;
 
-        private class GattDiscoverServices implements GattAction
+        private class GattAction implements IGattAction
         {
-            public GattDiscoverServices() { }
+            protected int m_Timeout;
+
+            private final Runnable m_RunDequeueGattAction;
+
+            GattAction()
+            {
+                m_Timeout = GATT_TIMEOUT;
+
+                m_RunDequeueGattAction= new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        GattAction removed = DequeueGattAction();
+                        Log("Gatt timeout: " + GetGattAction(removed.getClass().toString()));
+                        OnTimeout();
+                    }
+                };
+            }
 
             @Override
             public void Do()
             {
+                m_GattTimeoutHandler.postDelayed(m_RunDequeueGattAction, m_Timeout);
+            }
+
+            @Override
+            public void Done()
+            {
+                m_GattTimeoutHandler.removeCallbacks(m_RunDequeueGattAction);
+            }
+
+            @Override
+            public void OnTimeout()
+            {
+
+            }
+        }
+
+        private class GattDiscoverServices extends GattAction
+        {
+            public GattDiscoverServices()
+            {
+                super();
+            }
+
+            @Override
+            public void Do()
+            {
+                super.Do();
                 m_Gatt.discoverServices();
             }
         }
 
-        private class GattReadCharacteristic implements GattAction
+        private class GattReadCharacteristic extends GattAction
         {
             private BluetoothGattCharacteristic m_Characteristic;
 
             public GattReadCharacteristic(BluetoothGattCharacteristic characteristic)
             {
+                super();
                 m_Characteristic = characteristic;
             }
 
             @Override
             public void Do()
             {
+                super.Do();
                 m_Gatt.readCharacteristic(m_Characteristic);
             }
         }
 
-        private class GattWriteCharacteristic implements GattAction
+        private class GattWriteCharacteristic extends GattAction
         {
             private BluetoothGattCharacteristic m_Characteristic;
 
             public GattWriteCharacteristic(BluetoothGattCharacteristic characteristic)
             {
+                super();
                 m_Characteristic = characteristic;
             }
 
             @Override
             public void Do()
             {
+                super.Do();
                 m_Gatt.writeCharacteristic(m_Characteristic);
             }
         }
 
-        private class GattDisconnect implements GattAction
+        private class GattConnect extends GattAction
         {
+            public GattConnect()
+            {
+                super();
+                m_Timeout = CONNECT_DEVICE_TIMEOUT;
+            }
+
             @Override
             public void Do()
             {
+                super.Do();
+                m_ConnectTime = System.currentTimeMillis();
+                m_Gatt = m_Device.connectGatt(m_Context, true, c_BluetoothGattCallback);
+            }
+
+            @Override
+            public void OnTimeout()
+            {
+                BroadcastOnDeviceDisconnected(m_Address, true);
+            }
+        }
+
+        private class GattDisconnect extends GattAction
+        {
+            public GattDisconnect()
+            {
+                super();
+            }
+
+            @Override
+            public void Do()
+            {
+                super.Do();
                 m_Gatt.disconnect();
                 QueueGattAction(new GattClose());
             }
         }
 
-        private class GattClose implements GattAction
+        private class GattClose extends GattAction
         {
+            public GattClose()
+            {
+                super();
+            }
+
             @Override
             public void Do()
             {
+                super.Do();
                 m_Gatt.close();
-                // Dequeue here because no other event will be fired in which we can dequeue.
-                DequeueGattAction();
             }
         }
 
-        private class GattReadDescriptor implements GattAction
+        private class GattReadDescriptor extends GattAction
         {
             private BluetoothGattDescriptor m_Descriptor;
 
             public GattReadDescriptor(BluetoothGattDescriptor descriptor)
             {
+                super();
                 m_Descriptor = descriptor;
             }
 
             @Override
             public void Do()
             {
+                super.Do();
                 m_Gatt.readDescriptor(m_Descriptor);
             }
         }
 
-        private class GattWriteDescriptor implements GattAction
+        private class GattWriteDescriptor extends GattAction
         {
             private BluetoothGattDescriptor m_Descriptor;
 
             public GattWriteDescriptor(BluetoothGattDescriptor descriptor)
             {
+                super();
                 m_Descriptor = descriptor;
             }
 
             @Override
             public void Do()
             {
+                super.Do();
                 m_Gatt.writeDescriptor(m_Descriptor);
             }
         }
@@ -207,25 +302,28 @@ public class ConnectionManager extends Service
             @Override
             public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState)
             {
-                Log("onConnectionStateChange");
-
                 if (newState == STATE_CONNECTED)
                 {
+                    m_OnConnectedTime = System.currentTimeMillis();
                     m_ConnectionState = STATE_CONNECTED;
                     m_ConnectedDevices.add(m_Address);
+                    long connectTime = m_OnConnectedTime - m_ConnectTime;
+                    Log("Connected in " + connectTime + "ms");
                     BroadcastOnDeviceConnected(m_Address);
 
                     if (m_DiscoverServicesWhenConnected)
                     {
                         DiscoverServices();
-                        return;
                     }
                 }
                 else if (newState == BluetoothProfile.STATE_DISCONNECTED)
                 {
+                    Log("Disconnected");
                     m_ConnectionState = STATE_DISCONNECTED;
                     m_ConnectedDevices.remove(m_Address);
-                    BroadcastOnDeviceDisconnected(m_Address);
+                    BroadcastOnDeviceDisconnected(m_Address, false);
+
+                    ClearGattActionQueue();
                 }
 
                 DequeueGattAction();
@@ -397,6 +495,7 @@ public class ConnectionManager extends Service
             m_Device = bluetoothDevice;
             m_Name = (bluetoothDevice.getName() == null) ? bluetoothDevice.getAddress() : bluetoothDevice.getName();
             m_Address = bluetoothDevice.getAddress();
+            m_GattTimeoutHandler = new Handler();
 
             m_DiscoverServicesWhenConnected = false;
             m_ReadCharacteristicsWhenDiscovered = false;
@@ -408,11 +507,11 @@ public class ConnectionManager extends Service
         {
             if (IsConnected()) return;
 
+            Log("Connect");
             m_DiscoverServicesWhenConnected = discoverServicesWhenConnected;
             m_ReadCharacteristicsWhenDiscovered = readCharacteristicsWhenDiscovered;
-            m_Gatt = m_Device.connectGatt(m_Context, true, c_BluetoothGattCallback);
 
-            Log("Connect");
+            QueueGattAction(new GattConnect());
         }
 
         public void Disconnect()
@@ -459,11 +558,15 @@ public class ConnectionManager extends Service
 
         public BluetoothGattService GetService(String service)
         {
+            if (!IsConnected()) return null;
+
             return m_Gatt.getService(UUID.fromString(service));
         }
 
         public BluetoothGattCharacteristic GetCharacteristic(String serviceUUID, String characteristicUUID)
         {
+            if (!IsConnected()) return null;
+
             BluetoothGattService s = GetService(serviceUUID);
             if (s == null) return null;
             return s.getCharacteristic(UUID.fromString(characteristicUUID));
@@ -516,6 +619,11 @@ public class ConnectionManager extends Service
 
         public void ClearGattActionQueue()
         {
+            for (GattAction ga : m_GattActionQueue)
+            {
+                ga.Done();
+            }
+
             m_GattActionQueue.clear();
         }
 
@@ -531,15 +639,20 @@ public class ConnectionManager extends Service
             }
         }
 
-        private void DequeueGattAction()
+        private GattAction DequeueGattAction()
         {
             Log("DequeueGattAction (" + m_GattActionQueue.size() + " items in queue): " + (m_GattActionQueue.size() == 0 ? "null" : GetGattAction(m_GattActionQueue.peek().getClass().toString())));
 
-            if (m_GattActionQueue.size() == 0) return;
-            m_GattActionQueue.remove();
-            if (m_GattActionQueue.size() == 0) return;
+            if (m_GattActionQueue.size() == 0) return null;
+            GattAction completed = m_GattActionQueue.remove();
+            completed.Done();
 
-            m_GattActionQueue.peek().Do();
+            if (m_GattActionQueue.size() > 0)
+            {
+                m_GattActionQueue.peek().Do();
+            }
+
+            return completed;
         }
 
         private String GetGattAction(String className) {
@@ -596,10 +709,11 @@ public class ConnectionManager extends Service
             LocalBroadcastManager.getInstance(m_Context).sendBroadcast(intent);
         }
 
-        private void BroadcastOnDeviceDisconnected(String address)
+        private void BroadcastOnDeviceDisconnected(String address, boolean isTimeout)
         {
             Intent intent = new Intent(ON_DEVICE_DISCONNECTED);
             intent.putExtra(ADDRESS, address);
+            intent.putExtra(DATA, isTimeout);
             LocalBroadcastManager.getInstance(m_Context).sendBroadcast(intent);
         }
 
@@ -811,7 +925,7 @@ public class ConnectionManager extends Service
 
                 BroadcastScanStopped();
             }
-        }, SCAN_TIME);
+        }, SCAN_TIMEOUT);
 
         m_IsScanning = true;
     }
@@ -866,8 +980,10 @@ public class ConnectionManager extends Service
         device.Disconnect();
     }
 
-    private static byte GetDayCode(int day) {
-        switch (day) {
+    private static byte GetDayCode(int day)
+    {
+        switch (day)
+        {
             case Calendar.MONDAY:
                 return 1;
             case Calendar.TUESDAY:
@@ -887,7 +1003,8 @@ public class ConnectionManager extends Service
         }
     }
 
-    public static byte[] GetTimeInBytes(long timestamp) {
+    public static byte[] GetTimeInBytes(long timestamp)
+    {
         Calendar time = Calendar.getInstance();
         time.setTimeInMillis(timestamp);
 
