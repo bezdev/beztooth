@@ -5,6 +5,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
@@ -67,7 +70,9 @@ public class SyncClockActivity extends BluetoothActivity
             }
             else if (action.equals(ConnectionManager.ON_DEVICE_DISCONNECTED))
             {
-                m_DeviceSelectView.OnDeviceConnectionStatusChanged(intent.getStringExtra(ConnectionManager.ADDRESS), false, intent.getBooleanExtra(ConnectionManager.DATA, false));
+                String address = intent.getStringExtra(ConnectionManager.ADDRESS);
+                m_DeviceSelectView.OnDeviceConnectionStatusChanged(address, false, intent.getBooleanExtra(ConnectionManager.DATA, false));
+                m_DeviceSelectView.SetDeviceSelectState(address, true);
             }
             else if (action.equals(ConnectionManager.ON_CHARACTERISTIC_WRITE))
             {
@@ -132,7 +137,7 @@ public class SyncClockActivity extends BluetoothActivity
         Button button = findViewById(R.id.toolbarScanButton);
         button.setOnClickListener(new View.OnClickListener()
         {
-            public void onClick(View v)
+            public void onClick(View view)
             {
                 Scan();
             }
@@ -141,8 +146,6 @@ public class SyncClockActivity extends BluetoothActivity
 
     private void Scan()
     {
-        m_ConnectionManager.StopScan();
-        m_DeviceSelectView.ClearDevices();
         m_ConnectionManager.Scan();
     }
 
@@ -158,10 +161,11 @@ public class SyncClockActivity extends BluetoothActivity
             {
                 String address = view.getTag().toString();
 
-                ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
-                if (device == null) return;
+                m_DeviceSelectView.SetDeviceSelectState(address, false);
+                m_DeviceSelectView.SetDeviceStatusMessage(address, "");
 
-                device.Connect(true, false);
+                ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
+                m_ConnectionManager.ConnectDevice(device, true, false);
             }
         });
     }

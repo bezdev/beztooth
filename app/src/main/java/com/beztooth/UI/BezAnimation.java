@@ -17,7 +17,11 @@ public class BezAnimation
         view.startAnimation(animation);
     }
 
-    public static void StartButtonUpAnimation(Context context, View view) { StartButtonUpAnimation(context, view, null); }
+    public static void StartButtonUpAnimation(Context context, View view)
+    {
+        StartButtonUpAnimation(context, view, null);
+    }
+
     public static void StartButtonUpAnimation(Context context, View view, Animation.AnimationListener animationListener)
     {
         Animation animation = AnimationUtils.loadAnimation(context, R.anim.button_up);

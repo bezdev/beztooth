@@ -8,17 +8,21 @@ import android.widget.TextView;
 
 import com.beztooth.R;
 
+import java.util.HashMap;
+
 public class DeviceSelectView
 {
     private Context m_Context;
     private LinearLayout m_Root;
     private LayoutInflater m_LayoutInflater;
+    private HashMap<String, View> m_DeviceSelectViews;
 
     public DeviceSelectView(Context context, LinearLayout root)
     {
         m_Context = context;
         m_Root = root;
         m_LayoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        m_DeviceSelectViews = new HashMap<>();
     }
 
     public void AddDevice(String name, String address, ViewInputHandler.OnClick onClick)
@@ -45,6 +49,7 @@ public class DeviceSelectView
         container.setTag(address);
         container.SetOnClick(onClick);
 
+        m_DeviceSelectViews.put(address, container);
         m_Root.addView(view);
     }
 
@@ -94,11 +99,32 @@ public class DeviceSelectView
         }
     }
 
+    public void SetDeviceSelectState(String address, boolean isActive)
+    {
+        if (!m_DeviceSelectViews.containsKey(address)) return;
+
+        View view = m_DeviceSelectViews.get(address);
+
+        if (isActive)
+        {
+            //view.setBackgroundResource(R.drawable.select_border);
+            view.setAlpha(1.f);
+            view.setClickable(true);
+        }
+        else
+        {
+            //view.setBackgroundResource(R.drawable.select_border_inactive);
+            view.setAlpha(.5f);
+            view.setClickable(false);
+        }
+
+    }
     public void ClearDevices()
     {
         if (m_Root != null)
         {
             m_Root.removeAllViews();
+            m_DeviceSelectViews.clear();
         }
     }
 }

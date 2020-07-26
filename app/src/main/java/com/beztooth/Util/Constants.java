@@ -359,7 +359,7 @@ public class Constants {
         characteristics.put("2AB7", new Characteristic("2AB7", "HTTP Headers", CharacteristicReadType.STRING));
         characteristics.put("2AB8", new Characteristic("2AB8", "HTTP Status Code", CharacteristicReadType.STRING));
         characteristics.put("2ABB", new Characteristic("2ABB", "HTTPS Security", CharacteristicReadType.STRING));
-        characteristics.put("2A6F", new Characteristic("2A6F", "Humidity", CharacteristicReadType.STRING));
+        characteristics.put("2A6F", new Characteristic("2A6F", "Humidity", CharacteristicReadType.INTEGER));
         characteristics.put("2B22", new Characteristic("2B22", "IDD Annunciation Status", CharacteristicReadType.STRING));
         characteristics.put("2B25", new Characteristic("2B25", "IDD Command Control Point", CharacteristicReadType.STRING));
         characteristics.put("2B26", new Characteristic("2B26", "IDD Command Data", CharacteristicReadType.STRING));
@@ -416,7 +416,7 @@ public class Constants {
         characteristics.put("2A2F", new Characteristic("2A2F", "Position 2D", CharacteristicReadType.STRING));
         characteristics.put("2A30", new Characteristic("2A30", "Position 3D", CharacteristicReadType.STRING));
         characteristics.put("2A69", new Characteristic("2A69", "Position Quality", CharacteristicReadType.STRING));
-        characteristics.put("2A6D", new Characteristic("2A6D", "Pressure", CharacteristicReadType.STRING));
+        characteristics.put("2A6D", new Characteristic("2A6D", "Pressure", CharacteristicReadType.INTEGER));
         characteristics.put("2A4E", new Characteristic("2A4E", "Protocol Mode", CharacteristicReadType.STRING));
         characteristics.put("2A62", new Characteristic("2A62", "Pulse Oximetry Control Point", CharacteristicReadType.STRING));
         characteristics.put("2A78", new Characteristic("2A78", "Rainfall", CharacteristicReadType.STRING));
@@ -459,10 +459,10 @@ public class Constants {
         characteristics.put("2A48", new Characteristic("2A48", "Supported Unread Alert Category", CharacteristicReadType.STRING));
         characteristics.put("2A23", new Characteristic("2A23", "System ID", CharacteristicReadType.STRING));
         characteristics.put("2ABC", new Characteristic("2ABC", "TDS Control Point", CharacteristicReadType.STRING));
-        characteristics.put("2A6E", new Characteristic("2A6E", "Temperature", CharacteristicReadType.STRING));
-        characteristics.put("2A1F", new Characteristic("2A1F", "Temperature Celsius", CharacteristicReadType.STRING));
-        characteristics.put("2A20", new Characteristic("2A20", "Temperature Fahrenheit", CharacteristicReadType.STRING));
-        characteristics.put("2A1C", new Characteristic("2A1C", "Temperature Measurement", CharacteristicReadType.STRING));
+        characteristics.put("2A6E", new Characteristic("2A6E", "Temperature", CharacteristicReadType.INTEGER));
+        characteristics.put("2A1F", new Characteristic("2A1F", "Temperature Celsius", CharacteristicReadType.INTEGER));
+        characteristics.put("2A20", new Characteristic("2A20", "Temperature Fahrenheit", CharacteristicReadType.INTEGER));
+        characteristics.put("2A1C", new Characteristic("2A1C", "Temperature Measurement", CharacteristicReadType.INTEGER));
         characteristics.put("2A1D", new Characteristic("2A1D", "Temperature Type", CharacteristicReadType.STRING));
         characteristics.put("2A94", new Characteristic("2A94", "Three Zone Heart Rate Limits", CharacteristicReadType.STRING));
         characteristics.put("2A12", new Characteristic("2A12", "Time Accuracy", CharacteristicReadType.STRING));

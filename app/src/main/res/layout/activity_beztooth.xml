@@ -15,8 +15,9 @@
     <com.beztooth.UI.BezButton
         android:id="@+id/scanButton"
         android:layout_width="match_parent"
-        android:layout_height="120dp"
+        android:layout_height="wrap_content"
         android:layout_margin="20dp"
+        android:padding="25dp"
         android:background="@drawable/select_border"
         android:text="Scan"
         android:textColor="@color/BezBlue"
@@ -25,8 +26,9 @@
     <com.beztooth.UI.BezButton
         android:id="@+id/syncClockButton"
         android:layout_width="match_parent"
-        android:layout_height="120dp"
+        android:layout_height="wrap_content"
         android:layout_margin="20dp"
+        android:padding="25dp"
         android:background="@drawable/select_border"
         android:text="Sync Clock"
         android:textColor="@color/BezBlue"

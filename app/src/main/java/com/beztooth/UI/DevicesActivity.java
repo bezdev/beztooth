@@ -67,14 +67,6 @@ public class DevicesActivity extends BluetoothActivity
         m_DeviceSelectView = new DeviceSelectView(getApplicationContext(), (LinearLayout)findViewById(R.id.device_scroll));
 
         AddEventListeners();
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(ConnectionManager.ON_SCAN_STARTED);
-        intentFilter.addAction(ConnectionManager.ON_SCAN_STOPPED);
-        intentFilter.addAction(ConnectionManager.ON_DEVICE_SCANNED);
-        intentFilter.addAction(ConnectionManager.ON_DEVICE_CONNECTED);
-        intentFilter.addAction(ConnectionManager.ON_DEVICE_DISCONNECTED);
-        LocalBroadcastManager.getInstance(this).registerReceiver(m_BroadcastReceiver, intentFilter);
     }
 
     @Override
@@ -99,6 +91,14 @@ public class DevicesActivity extends BluetoothActivity
     @Override
     protected void OnConnectionManagerConnected()
     {
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ConnectionManager.ON_SCAN_STARTED);
+        intentFilter.addAction(ConnectionManager.ON_SCAN_STOPPED);
+        intentFilter.addAction(ConnectionManager.ON_DEVICE_SCANNED);
+        intentFilter.addAction(ConnectionManager.ON_DEVICE_CONNECTED);
+        intentFilter.addAction(ConnectionManager.ON_DEVICE_DISCONNECTED);
+        LocalBroadcastManager.getInstance(this).registerReceiver(m_BroadcastReceiver, intentFilter);
+
         // Devices are already being scanning, display what we have discovered so far.
         if (m_ConnectionManager.IsScanning())
         {
@@ -109,10 +109,8 @@ public class DevicesActivity extends BluetoothActivity
                 AddDevice(mac);
             }
         }
-        else
-        {
-            Scan();
-        }
+
+        Scan();
     }
 
     private void AddEventListeners()
