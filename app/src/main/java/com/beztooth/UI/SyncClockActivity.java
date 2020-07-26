@@ -5,9 +5,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.ColorStateList;
-import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
@@ -44,11 +41,6 @@ public class SyncClockActivity extends BluetoothActivity
             }
             else if (action.equals(ConnectionManager.ON_DEVICE_SCANNED))
             {
-                if (!intent.getStringExtra(ConnectionManager.NAME).startsWith(CLOCK_DEVICE_PREFIX))
-                {
-                    return;
-                }
-
                 AddDevice(intent.getStringExtra(ConnectionManager.ADDRESS));
             }
             else if (action.equals(ConnectionManager.ON_SERVICES_DISCOVERED))
@@ -118,6 +110,14 @@ public class SyncClockActivity extends BluetoothActivity
     @Override
     protected void OnConnectionManagerConnected()
     {
+        if (m_ConnectionManager.IsScanning())
+        {
+            for (String mac : m_ConnectionManager.GetScannedDevices())
+            {
+                AddDevice(mac);
+            }
+        }
+
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ConnectionManager.ON_SCAN_STARTED);
         intentFilter.addAction(ConnectionManager.ON_SCAN_STOPPED);
@@ -146,6 +146,14 @@ public class SyncClockActivity extends BluetoothActivity
 
     private void Scan()
     {
+        if (!m_ConnectionManager.IsScanning())
+        {
+            // Fresh scan, clear devices
+            m_DeviceSelectView.ClearDevices();
+        }
+
+        m_ScanProgress.setVisibility(View.VISIBLE);
+
         m_ConnectionManager.Scan();
     }
 
@@ -153,6 +161,8 @@ public class SyncClockActivity extends BluetoothActivity
     {
         ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
         if (device == null) return;
+
+        if (!device.GetName().startsWith(CLOCK_DEVICE_PREFIX)) return;
 
         m_DeviceSelectView.AddDevice(device.GetName(), device.GetAddress(), new ViewInputHandler.OnClick()
         {
@@ -168,5 +178,12 @@ public class SyncClockActivity extends BluetoothActivity
                 m_ConnectionManager.ConnectDevice(device, true, false);
             }
         });
+
+        // If device is already connected, we can't sync.
+        if (device.IsConnected())
+        {
+            m_DeviceSelectView.OnDeviceConnectionStatusChanged(address, true, false);
+            m_DeviceSelectView.SetDeviceSelectState(address, false);
+        }
     }
 }

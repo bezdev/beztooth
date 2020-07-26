@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -78,8 +79,7 @@ public class ConnectionManager extends Service
     private BluetoothLeScanner m_BluetoothLeScanner;
 
     private HashMap<String, Device> m_Devices = new HashMap<>();
-    private HashSet<String> m_ConnectedDevices = new HashSet<>();
-    private LinkedList<String> m_ScannedDevice = new LinkedList<>();
+    private LinkedList<String> m_ScannedDevices = new LinkedList<>();
 
     private boolean m_IsInitialized;
     private boolean m_IsScanning;
@@ -339,7 +339,6 @@ public class ConnectionManager extends Service
                 {
                     m_OnConnectedTime = System.currentTimeMillis();
                     m_ConnectionState = STATE_CONNECTED;
-                    m_ConnectedDevices.add(m_Address);
                     long connectTime = m_OnConnectedTime - m_ConnectTime;
                     Log("Connected in " + connectTime + "ms");
                     BroadcastOnDeviceConnected(m_Address);
@@ -355,7 +354,6 @@ public class ConnectionManager extends Service
                 {
                     Log("Disconnected");
                     m_ConnectionState = STATE_DISCONNECTED;
-                    m_ConnectedDevices.remove(m_Address);
                     BroadcastOnDeviceDisconnected(m_Address, false);
 
                     ClearGattActionQueue();
@@ -898,6 +896,7 @@ public class ConnectionManager extends Service
                 String deviceName = device.GetName();
                 String deviceAddress = device.GetAddress();
                 m_Devices.put(deviceAddress, device);
+                m_ScannedDevices.add(deviceAddress);
 
                 BroadcastOnDeviceScanned(deviceName, deviceAddress);
 
@@ -962,14 +961,20 @@ public class ConnectionManager extends Service
         // show devices that are already connected.
         if (!m_IsScanning)
         {
-            HashSet<String> connectedDevices = GetConnectedDevices();
-            Iterator it = m_Devices.entrySet().iterator();
+            Iterator<String> it = m_ScannedDevices.iterator();
             while (it.hasNext())
             {
-                Map.Entry pair = (Map.Entry) it.next();
-                if (!connectedDevices.contains(pair.getKey().toString()))
+                String address = it.next();
+                Device device = m_Devices.get(address);
+                if (!device.IsConnected())
                 {
+                    m_Devices.remove(address);
                     it.remove();
+                }
+                else
+                {
+                    // Broadcast already connected devices so UI knows to display them.
+                    BroadcastOnDeviceScanned(device.GetName(), device.GetAddress());
                 }
             }
 
@@ -1023,15 +1028,14 @@ public class ConnectionManager extends Service
         return m_IsScanning;
     }
 
-    public HashSet<String> GetConnectedDevices()
-    {
-        return m_ConnectedDevices;
-    }
-
-    // TODO: make this thread safe
     public HashMap<String, Device> GetDevices()
     {
         return m_Devices;
+    }
+
+    public LinkedList<String> GetScannedDevices()
+    {
+        return m_ScannedDevices;
     }
 
     public void ConnectDevice(Device device, boolean discoverServicesWhenConnected, boolean readCharacteristicsWhenDiscovered)

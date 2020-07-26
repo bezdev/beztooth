@@ -15,9 +15,6 @@ import com.beztooth.Bluetooth.ConnectionManager;
 import com.beztooth.R;
 import com.beztooth.Util.Logger;
 
-import java.util.HashSet;
-import java.util.Iterator;
-
 public class DevicesActivity extends BluetoothActivity
 {
     private static final String TAG = "DevicesActivity";
@@ -91,6 +88,14 @@ public class DevicesActivity extends BluetoothActivity
     @Override
     protected void OnConnectionManagerConnected()
     {
+        if (m_ConnectionManager.IsScanning())
+        {
+            for (String mac : m_ConnectionManager.GetScannedDevices())
+            {
+                AddDevice(mac);
+            }
+        }
+
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ConnectionManager.ON_SCAN_STARTED);
         intentFilter.addAction(ConnectionManager.ON_SCAN_STOPPED);
@@ -98,17 +103,6 @@ public class DevicesActivity extends BluetoothActivity
         intentFilter.addAction(ConnectionManager.ON_DEVICE_CONNECTED);
         intentFilter.addAction(ConnectionManager.ON_DEVICE_DISCONNECTED);
         LocalBroadcastManager.getInstance(this).registerReceiver(m_BroadcastReceiver, intentFilter);
-
-        // Devices are already being scanning, display what we have discovered so far.
-        if (m_ConnectionManager.IsScanning())
-        {
-            m_ScanProgress.setVisibility(View.VISIBLE);
-
-            for (String mac : m_ConnectionManager.GetDevices().keySet())
-            {
-                AddDevice(mac);
-            }
-        }
 
         Scan();
     }
@@ -132,16 +126,9 @@ public class DevicesActivity extends BluetoothActivity
         {
             // Fresh scan, clear devices
             m_DeviceSelectView.ClearDevices();
-
-            // Some devices are already connected, display the ones that are.  Connected devices will not
-            // show up during the scan so we must make sure they are already displayed.
-            HashSet<String> connectedDevices = m_ConnectionManager.GetConnectedDevices();
-            Iterator<String> it = connectedDevices.iterator();
-            while(it.hasNext())
-            {
-                AddDevice(it.next());
-            }
         }
+
+        m_ScanProgress.setVisibility(View.VISIBLE);
 
         m_ConnectionManager.Scan();
     }
@@ -171,5 +158,10 @@ public class DevicesActivity extends BluetoothActivity
                 m_Activity.startActivityForResult(intent, 0);
             }
         });
+
+        if (device.IsConnected())
+        {
+            m_DeviceSelectView.OnDeviceConnectionStatusChanged(address, true, false);
+        }
     }
 }

@@ -276,7 +276,7 @@ public class DeviceActivity extends BluetoothActivity
         TextView characteristicPermissions = characteristicView.findViewById(R.id.characteristic_permissions);
         characteristicPermissions.setText("Properties: " + ConnectionManager.GetProperties(properties, " | "));
         // Show the supported buttons
-        ShowCharacteristicActions(serviceUUID, characteristicView, properties);
+        AddCharacteristicActions(serviceUUID, characteristicView, properties);
 
         LinearLayout insertPoint = serviceView.findViewById(R.id.characteristic_scroll);
         insertPoint.addView(characteristicView);
@@ -351,7 +351,7 @@ public class DeviceActivity extends BluetoothActivity
         }
     };
 
-    private void ShowCharacteristicActions(String serviceUUID, View characteristicView, int properties)
+    private void AddCharacteristicActions(String serviceUUID, View characteristicView, int properties)
     {
         int[] c_SupportedActions = new int[] {
                 BluetoothGattCharacteristic.PROPERTY_READ,
@@ -369,7 +369,8 @@ public class DeviceActivity extends BluetoothActivity
             else if (action == BluetoothGattCharacteristic.PROPERTY_WRITE)
             {
                 button = characteristicView.findViewById(R.id.characteristic_write);
-            } else if (action == BluetoothGattCharacteristic.PROPERTY_NOTIFY)
+            }
+            else if (action == BluetoothGattCharacteristic.PROPERTY_NOTIFY)
             {
                 button = characteristicView.findViewById(R.id.characteristic_notify);
             }
