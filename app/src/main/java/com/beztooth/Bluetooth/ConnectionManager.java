@@ -28,13 +28,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Locale;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -73,6 +70,7 @@ public class ConnectionManager extends Service
     private static final int SCAN_TIMEOUT = 10000;
     private static final int CONNECT_DEVICE_TIMEOUT = 10000;
     private static final int GATT_TIMEOUT = 5000;
+    private static final boolean AUTO_READ_DESCRIPTOR = false;
 
     private Handler m_ScanHandler;
     private BluetoothAdapter m_BluetoothAdapter;
@@ -386,11 +384,14 @@ public class ConnectionManager extends Service
 
                         if (m_ReadCharacteristicsWhenDiscovered)
                         {
-                            for (BluetoothGattDescriptor d : c.getDescriptors())
+                            if (AUTO_READ_DESCRIPTOR)
                             {
-                                if ((d.getPermissions() & BluetoothGattDescriptor.PERMISSION_READ) == BluetoothGattDescriptor.PERMISSION_READ)
+                                for (BluetoothGattDescriptor d : c.getDescriptors())
                                 {
-                                    ReadDescriptor(d);
+                                    if ((d.getPermissions() & BluetoothGattDescriptor.PERMISSION_READ) == BluetoothGattDescriptor.PERMISSION_READ)
+                                    {
+                                        ReadDescriptor(d);
+                                    }
                                 }
                             }
 
@@ -617,10 +618,8 @@ public class ConnectionManager extends Service
         public void SetCharacteristicNotification(BluetoothGattCharacteristic characteristic, boolean enable)
         {
             if (!IsConnected()) return;
-
             if (characteristic == null) return;
-
-            // TODO: add validation to make sure characteristic supports notify
+            if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != BluetoothGattCharacteristic.PROPERTY_NOTIFY) return;
 
             // Get Client Characteristic Configuration descriptor
             BluetoothGattDescriptor d = characteristic.getDescriptor(UUID.fromString(Constants.AddBaseUUID("2902")));

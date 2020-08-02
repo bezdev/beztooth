@@ -126,13 +126,11 @@ public class DeviceSelectView
 
         if (isActive)
         {
-            //view.setBackgroundResource(R.drawable.select_border);
             view.setAlpha(1.f);
             view.setClickable(true);
         }
         else
         {
-            //view.setBackgroundResource(R.drawable.select_border_inactive);
             view.setAlpha(.5f);
             view.setClickable(false);
         }

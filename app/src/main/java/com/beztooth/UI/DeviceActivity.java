@@ -354,23 +354,18 @@ public class DeviceActivity extends BluetoothActivity
 
     private void UpdateCharacteristicData(String serviceUuid, String characteristicUuid, byte[] data)
     {
+        Constants.Characteristic characteristicConstant = Constants.Characteristics.Get(m_Address, serviceUuid, characteristicUuid);
+        Constants.CharacteristicReadType type = (characteristicConstant == null) ? Constants.DEFAULT_CHARACTERISTIC_TYPE : characteristicConstant.ReadType;
+
         LinearLayout services = findViewById(R.id.service_scroll);
         TextView textView = services.findViewWithTag(serviceUuid).findViewWithTag(characteristicUuid).findViewById(R.id.characteristic_data_label);
         textView.setVisibility(View.VISIBLE);
-        textView.setText("Data: " + data.length + " byte" + ((data.length == 1) ? "" :  "s"));
+        textView.setText(data.length + " byte" + (((data.length == 1) ? "" :  "s") + " (" + type + "):"));
         textView = services.findViewWithTag(serviceUuid).findViewWithTag(characteristicUuid).findViewById(R.id.characteristic_data);
         textView.setVisibility(View.VISIBLE);
 
         String characteristicValue;
-        Constants.Characteristic characteristicConstant = Constants.Characteristics.Get(m_Address, serviceUuid, characteristicUuid);
-        if (characteristicConstant == null)
-        {
-            characteristicValue = ConnectionManager.GetDataString(data, Constants.CharacteristicReadType.HEX);
-        }
-        else
-        {
-            characteristicValue = ConnectionManager.GetDataString(data, characteristicConstant.ReadType);
-        }
+        characteristicValue = ConnectionManager.GetDataString(data, type);
 
         textView.setText(characteristicValue);
     }
@@ -391,15 +386,18 @@ public class DeviceActivity extends BluetoothActivity
     {
         private String m_ServiceUUID;
         private String m_CharacteristicUUID;
+        private boolean m_IsNotifyEnabled;
+
         public CharacteristicActionOnClick(String serviceUUID, String characteristicUUID) {
             m_ServiceUUID = serviceUUID;
             m_CharacteristicUUID = characteristicUUID;
+            m_IsNotifyEnabled = false;
         }
 
         @Override
-        public void Do(View v)
+        public void Do(View view)
         {
-            int action = Integer.parseInt(v.getTag().toString());
+            int action = Integer.parseInt(view.getTag().toString());
             if (action == BluetoothGattCharacteristic.PROPERTY_READ)
             {
                 m_Device.ReadCharacteristic(m_Device.GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID));
@@ -416,7 +414,18 @@ public class DeviceActivity extends BluetoothActivity
             }
             else if (action == BluetoothGattCharacteristic.PROPERTY_NOTIFY)
             {
-                m_Device.SetCharacteristicNotification(m_Device.GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID), true);
+                m_IsNotifyEnabled = !m_IsNotifyEnabled;
+
+                if (m_IsNotifyEnabled)
+                {
+                    view.setBackgroundResource(R.drawable.select_border_small_active);
+                }
+                else
+                {
+                    view.setBackgroundResource(R.drawable.select_border_small);
+                }
+
+                m_Device.SetCharacteristicNotification(m_Device.GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID), m_IsNotifyEnabled);
             }
         }
     };
