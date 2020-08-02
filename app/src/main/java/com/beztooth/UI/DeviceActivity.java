@@ -6,11 +6,15 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.Toolbar;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -28,6 +32,7 @@ public class DeviceActivity extends BluetoothActivity
     public final static String TAG = "DeviceActivity";
 
     private ProgressBar m_ConnectDiscoverProgress;
+    private LayoutInflater m_LayoutInflater;
 
     private ConnectionManager.Device m_Device;
     private boolean m_AreServicesDiscovered;
@@ -87,6 +92,8 @@ public class DeviceActivity extends BluetoothActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device);
+
+        m_LayoutInflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
         m_ConnectDiscoverProgress = findViewById(R.id.connectDiscoverProgress);
         m_ConnectDiscoverProgress.setVisibility(View.GONE);
@@ -204,10 +211,8 @@ public class DeviceActivity extends BluetoothActivity
     {
         String serviceName = Constants.Services.Get(m_Address, serviceUUID, false);
 
-        LayoutInflater vi = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-
         // Service layout shows text for both service name and uuid.  If there is no service name, only display the uuid.
-        View serviceView = vi.inflate(R.layout.service_select, null);
+        View serviceView = m_LayoutInflater.inflate(R.layout.service_select, null);
         serviceView.setTag(serviceUUID);
 
         TextView serviceNameView = serviceView.findViewById(R.id.service_name);
@@ -253,10 +258,8 @@ public class DeviceActivity extends BluetoothActivity
         Constants.Characteristic characteristicConstant = Constants.Characteristics.Get(m_Address, serviceUUID, characteristicUUID);
         String characteristicName = characteristicConstant == null ? null : characteristicConstant.Name;
 
-        LayoutInflater vi = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-
         // Characteristic layout shows text for both characteristic name and uuid.  If there is no characteristic name, only display the uuid.
-        View characteristicView = vi.inflate(R.layout.characteristic_select, null);
+        View characteristicView = m_LayoutInflater.inflate(R.layout.characteristic_select, null);
         characteristicView.setTag(characteristicUUID);
         TextView characteristicNameView = characteristicView.findViewById(R.id.characteristic_name);
         characteristicNameView.setText(characteristicName == null ? characteristicUUID : characteristicName);
@@ -271,15 +274,82 @@ public class DeviceActivity extends BluetoothActivity
             characteristicUUIDView.setVisibility(View.GONE);
         }
 
-        // Display permissions of this characteristic
+        // Add the supported buttons
         int properties = m_Device.GetCharacteristic(serviceUUID, characteristicUUID).getProperties();
-        TextView characteristicPermissions = characteristicView.findViewById(R.id.characteristic_permissions);
-        characteristicPermissions.setText("Properties: " + ConnectionManager.GetProperties(properties, " | "));
-        // Show the supported buttons
         AddCharacteristicActions(serviceUUID, characteristicView, properties);
 
         LinearLayout insertPoint = serviceView.findViewById(R.id.characteristic_scroll);
         insertPoint.addView(characteristicView);
+    }
+
+    private void AddCharacteristicActions(String serviceUUID, View characteristicView, int properties)
+    {
+        int[] c_SupportedActions = new int[] {
+            BluetoothGattCharacteristic.PROPERTY_READ,
+            BluetoothGattCharacteristic.PROPERTY_WRITE,
+            BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE,
+            BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+            BluetoothGattCharacteristic.PROPERTY_INDICATE,
+            BluetoothGattCharacteristic.PROPERTY_SIGNED_WRITE,
+            BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS,
+        };
+
+        LinkedList<View> actions = new LinkedList<>();
+        for (int action : c_SupportedActions)
+        {
+            // Action not supported
+            if ((properties & action) != action) continue;
+
+            actions.add(CreateCharacteristicActionButton(serviceUUID, characteristicView.getTag().toString(), action));
+        }
+
+        if (actions.size() == 0) return;
+
+        LinearLayout ll = characteristicView.findViewById(R.id.characteristic_actions);
+
+        // There is no way to automatically overflow these buttons to the next line using a LinearLayout so must compute the
+        // width of all the buttons, and add new rows when we reach the max width (taking into account margins and padding).
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        float maxWidth  = (displayMetrics.widthPixels / displayMetrics.density - 55);  // 55: margins + padding
+
+        LinearLayout row = new LinearLayout(this);
+        row.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        row.setOrientation(LinearLayout.HORIZONTAL);
+
+        final int MARGIN = 10;
+
+        float totalButtonWidth = 0;
+        for (View action : actions)
+        {
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            layoutParams.rightMargin = (int) (MARGIN * displayMetrics.density);
+            layoutParams.bottomMargin = (int) (MARGIN * displayMetrics.density);
+            action.setLayoutParams(layoutParams);
+
+            action.measure(0, 0);
+            float buttonWidth = (action.getMeasuredWidth() / displayMetrics.density) + MARGIN;
+            totalButtonWidth += buttonWidth;
+
+            if (totalButtonWidth > maxWidth)
+            {
+                // Add previous row.
+                ll.addView(row);
+
+                // Need to add an additional row because we ran out of space.
+                row = new LinearLayout(this);
+                row.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                row.setOrientation(LinearLayout.HORIZONTAL);
+
+                // This will be the first element on a new row.
+                totalButtonWidth = buttonWidth;
+            }
+
+            row.addView(action);
+        }
+
+        // Add final row
+        ll.addView(row);
     }
 
     private void UpdateCharacteristicData(String serviceUuid, String characteristicUuid, byte[] data)
@@ -351,41 +421,42 @@ public class DeviceActivity extends BluetoothActivity
         }
     };
 
-    private void AddCharacteristicActions(String serviceUUID, View characteristicView, int properties)
+    private View CreateCharacteristicActionButton(String serviceUUID, String characteristicUUID, int action)
     {
-        int[] c_SupportedActions = new int[] {
-                BluetoothGattCharacteristic.PROPERTY_READ,
-                BluetoothGattCharacteristic.PROPERTY_WRITE,
-                BluetoothGattCharacteristic.PROPERTY_NOTIFY
-        };
+        BezButton actionButton = (BezButton) m_LayoutInflater.inflate(R.layout.characteristic_action, null);
 
-        for (int action : c_SupportedActions)
+        if (action == BluetoothGattCharacteristic.PROPERTY_READ)
         {
-            BezButton button = null;
-            if (action == BluetoothGattCharacteristic.PROPERTY_READ)
-            {
-                button = characteristicView.findViewById(R.id.characteristic_read);
-            }
-            else if (action == BluetoothGattCharacteristic.PROPERTY_WRITE)
-            {
-                button = characteristicView.findViewById(R.id.characteristic_write);
-            }
-            else if (action == BluetoothGattCharacteristic.PROPERTY_NOTIFY)
-            {
-                button = characteristicView.findViewById(R.id.characteristic_notify);
-            }
-
-            button.setTag(action);
-
-            if ((properties & action) == action)
-            {
-                button.setVisibility(View.VISIBLE);
-                button.SetOnClick(new CharacteristicActionOnClick(serviceUUID, characteristicView.getTag().toString()));
-            }
-            else
-            {
-                button.setVisibility(View.GONE);
-            }
+            actionButton.setText("Read");
         }
+        else if (action == BluetoothGattCharacteristic.PROPERTY_WRITE)
+        {
+            actionButton.setText("Write");
+        }
+        else if (action == BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)
+        {
+            actionButton.setText("Write no response");
+        }
+        else if (action == BluetoothGattCharacteristic.PROPERTY_NOTIFY)
+        {
+            actionButton.setText("Notify");
+        }
+        else if (action == BluetoothGattCharacteristic.PROPERTY_INDICATE)
+        {
+            actionButton.setText("Indicate");
+        }
+        else if (action == BluetoothGattCharacteristic.PROPERTY_SIGNED_WRITE)
+        {
+            actionButton.setText("Signed Write");
+        }
+        else if (action == BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS)
+        {
+            actionButton.setText("Extended props");
+        }
+
+        actionButton.setTag(action);
+        actionButton.SetOnClick(new CharacteristicActionOnClick(serviceUUID, characteristicUUID));
+
+        return actionButton;
     }
 }

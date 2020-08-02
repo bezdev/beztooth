@@ -16,13 +16,25 @@ public class DeviceSelectView
     private LinearLayout m_Root;
     private LayoutInflater m_LayoutInflater;
     private HashMap<String, View> m_DeviceSelectViews;
+    private boolean m_IsAppend;
 
     public DeviceSelectView(Context context, LinearLayout root)
+    {
+        Initialize(context, root, true);
+    }
+
+    public DeviceSelectView(Context context, LinearLayout root, boolean isAppend)
+    {
+        Initialize(context, root, isAppend);
+    }
+
+    private void Initialize(Context context, LinearLayout root, boolean isAppend)
     {
         m_Context = context;
         m_Root = root;
         m_LayoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         m_DeviceSelectViews = new HashMap<>();
+        m_IsAppend = isAppend;
     }
 
     public void AddDevice(String name, String address, ViewInputHandler.OnClick onClick)
@@ -50,7 +62,14 @@ public class DeviceSelectView
         container.SetOnClick(onClick);
 
         m_DeviceSelectViews.put(address, container);
-        m_Root.addView(view);
+        if (m_IsAppend)
+        {
+            m_Root.addView(view);
+        }
+        else
+        {
+            m_Root.addView(view, 0);
+        }
     }
 
     public void OnDeviceConnectionStatusChanged(String address, boolean isConnected, boolean isTimeout)

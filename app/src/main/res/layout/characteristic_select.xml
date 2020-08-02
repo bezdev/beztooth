@@ -29,38 +29,11 @@
             android:textColor="@color/colorAccent"
             android:textSize="16sp"
             android:visibility="gone" />
-        <TextView
-            android:id="@+id/characteristic_permissions"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@color/commentGreen"
-            android:textSize="16sp" />
         <LinearLayout
-            android:layout_width="match_parent"
+            android:id="@+id/characteristic_actions"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <com.beztooth.UI.BezButton
-                android:id="@+id/characteristic_read"
-                android:background="@drawable/select_border_small"
-                android:layout_marginRight="10dp"
-                android:text="Read"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <com.beztooth.UI.BezButton
-                android:id="@+id/characteristic_write"
-                android:background="@drawable/select_border_small"
-                android:layout_marginRight="10dp"
-                android:text="Write"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <com.beztooth.UI.BezButton
-                android:id="@+id/characteristic_notify"
-                android:background="@drawable/select_border_small"
-                android:layout_marginRight="10dp"
-                android:text="Notify"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-        </LinearLayout>
+            android:orientation="vertical" />
         <TextView
             android:id="@+id/characteristic_data_label"
             android:layout_width="match_parent"
