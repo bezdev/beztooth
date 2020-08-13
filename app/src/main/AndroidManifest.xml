@@ -19,6 +19,7 @@
         <activity android:name=".UI.DeviceActivity" />
         <activity android:name=".UI.DevicesActivity" />
         <activity android:name=".UI.SyncClockActivity" />
+        <activity android:name=".UI.ThermometerActivity" />
         <service
             android:name=".Bluetooth.ConnectionManager"
             android:enabled="true" />

@@ -540,19 +540,16 @@ public class ConnectionManager extends Service
             m_Address = bluetoothDevice.getAddress();
             m_GattTimeoutHandler = new Handler();
 
-            m_DiscoverServicesWhenConnected = false;
-            m_ReadCharacteristicsWhenDiscovered = false;
+            m_DiscoverServicesWhenConnected = true;
+            m_ReadCharacteristicsWhenDiscovered = true;
 
             m_GattActionQueueLock = new ReentrantLock();
             m_GattActionQueue = new LinkedList<>();
         }
 
-        public void Connect(boolean discoverServicesWhenConnected, boolean readCharacteristicsWhenDiscovered)
+        public void Connect()
         {
             if (IsConnected() || IsConnecting()) return;
-
-            m_DiscoverServicesWhenConnected = discoverServicesWhenConnected;
-            m_ReadCharacteristicsWhenDiscovered = readCharacteristicsWhenDiscovered;
 
             QueueGattAction(new GattConnect());
         }
@@ -622,7 +619,7 @@ public class ConnectionManager extends Service
             if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != BluetoothGattCharacteristic.PROPERTY_NOTIFY) return;
 
             // Get Client Characteristic Configuration descriptor
-            BluetoothGattDescriptor d = characteristic.getDescriptor(UUID.fromString(Constants.AddBaseUUID("2902")));
+            BluetoothGattDescriptor d = characteristic.getDescriptor(UUID.fromString(Constants.DESCRIPTOR_CLIENT_CHARACTERISTIC_CONFIGURATION.GetFullUUID()));
             if (d == null) return;
 
             // Enable notify on client
@@ -631,6 +628,11 @@ public class ConnectionManager extends Service
             // Enable notify on server
             d.setValue(enable ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : new byte[] { 0x00, 0x00 });
             WriteDescriptor(d);
+        }
+
+        public void SetReadCharacteristicsWhenDiscovered(boolean readCharacteristicsWhenDiscovered)
+        {
+            m_ReadCharacteristicsWhenDiscovered = readCharacteristicsWhenDiscovered;
         }
 
         public boolean IsConnected()
@@ -948,6 +950,8 @@ public class ConnectionManager extends Service
 
     public Device GetDevice(String address)
     {
+        if (!m_Devices.containsKey(address)) return null;
+
         return m_Devices.get(address);
     }
 
@@ -960,6 +964,8 @@ public class ConnectionManager extends Service
         // show devices that are already connected.
         if (!m_IsScanning)
         {
+            LinkedList<String> connectedDevices = new LinkedList<>();
+
             Iterator<String> it = m_ScannedDevices.iterator();
             while (it.hasNext())
             {
@@ -974,8 +980,12 @@ public class ConnectionManager extends Service
                 {
                     // Broadcast already connected devices so UI knows to display them.
                     BroadcastOnDeviceScanned(device.GetName(), device.GetAddress());
+
+                    connectedDevices.add(device.GetAddress());
                 }
             }
+
+            m_ScannedDevices = connectedDevices;
 
             // Start scan
             LinkedList<ScanFilter> filters = new LinkedList<>();
@@ -1027,17 +1037,13 @@ public class ConnectionManager extends Service
         return m_IsScanning;
     }
 
-    public HashMap<String, Device> GetDevices()
-    {
-        return m_Devices;
-    }
-
     public LinkedList<String> GetScannedDevices()
     {
         return m_ScannedDevices;
     }
 
-    public void ConnectDevice(Device device, boolean discoverServicesWhenConnected, boolean readCharacteristicsWhenDiscovered)
+    // TODO: remove connect/disconnect
+    public void ConnectDevice(Device device)
     {
         if (!Initialize()) return;
         if (device == null) return;
@@ -1046,7 +1052,7 @@ public class ConnectionManager extends Service
         Logger.Debug(TAG, "ConnectDevice");
         // Clear gatt queue in case there are some unprocessed events
         device.ClearGattActionQueue();
-        device.Connect(discoverServicesWhenConnected, readCharacteristicsWhenDiscovered);
+        device.Connect();
     }
 
     public void DisconnectDevice(Device device)
@@ -1119,7 +1125,7 @@ public class ConnectionManager extends Service
         {
             return new String(data);
         }
-        else if (type == Constants.CharacteristicReadType.HEX)
+        else if (type == Constants.CharacteristicReadType.HEX || type == Constants.CharacteristicReadType.CUSTOM)
         {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < data.length; i++)

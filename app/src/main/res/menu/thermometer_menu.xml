@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_sync_time"
+        android:enabled="true"
+        android:state_enabled="true"
+        android:title="Sync Time"
+        android:visible="true" />
+    <item
+        android:id="@+id/menu_live_time"
+        android:title="Live Time"
+        android:checkable="true" />
+    <item
+        android:id="@+id/menu_live_sensors"
+        android:title="Live Sensors"
+        android:checkable="true" />
+</menu>

@@ -16,11 +16,7 @@
             android:id="@+id/toolbarDisconnectButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="5dp"
-            android:paddingRight="5dp"
             android:layout_gravity="right"
-            android:background="@drawable/select_border_small"
-            android:backgroundTint="@color/colorAccent"
             android:text="Disconnect" />
         <ProgressBar
             android:id="@+id/connectDiscoverProgress"

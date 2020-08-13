@@ -6,12 +6,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -142,7 +140,7 @@ public class DeviceActivity extends BluetoothActivity
 
         if (!m_Device.IsConnected())
         {
-            m_ConnectionManager.ConnectDevice(m_Device, true, true);
+            m_ConnectionManager.ConnectDevice(m_Device);
         }
         else
         {
@@ -170,38 +168,7 @@ public class DeviceActivity extends BluetoothActivity
 
     private void ShowServices()
     {
-        List<BluetoothGattService> services = m_Device.GetServices();
-
-        LinkedList<BluetoothGattService> sortedServices = new LinkedList<>();
-        for (BluetoothGattService bgs : services)
-        {
-            String knownService = Constants.Services.Get(bgs.getUuid().toString());
-            if (knownService != null) {
-                sortedServices.add(bgs);
-            }
-        }
-        for (BluetoothGattService bgs : services)
-        {
-            Constants.Device d = Constants.Devices.Get(m_Address);
-            if (d != null)
-            {
-                String knownService = Constants.Services.Get(m_Address, bgs.getUuid().toString(), true);
-                if (knownService != null)
-                {
-                    sortedServices.addFirst(bgs);
-                }
-            }
-            else
-            {
-                String knownService = Constants.Services.Get(bgs.getUuid().toString());
-                if (knownService == null)
-                {
-                    sortedServices.add(bgs);
-                }
-            }
-        }
-
-        for (BluetoothGattService s : sortedServices)
+        for (BluetoothGattService s :  m_Device.GetServices())
         {
             AddServiceSelect(s.getUuid().toString(), s.getCharacteristics());
         }
@@ -209,7 +176,7 @@ public class DeviceActivity extends BluetoothActivity
 
     private void AddServiceSelect(String serviceUUID, List<BluetoothGattCharacteristic> characteristics)
     {
-        String serviceName = Constants.Services.Get(m_Address, serviceUUID, false);
+        String serviceName = Constants.Services.Get(m_Address, serviceUUID);
 
         // Service layout shows text for both service name and uuid.  If there is no service name, only display the uuid.
         View serviceView = m_LayoutInflater.inflate(R.layout.service_select, null);
@@ -230,21 +197,7 @@ public class DeviceActivity extends BluetoothActivity
         //v.setClickable(true);
         //v.setOnClickListener();
 
-        LinkedList<BluetoothGattCharacteristic> sortedCharacteristics = new LinkedList<>();
-        for (BluetoothGattCharacteristic bgc : characteristics)
-        {
-            Constants.Characteristic knownCharacteristic = Constants.Characteristics.Get(m_Address, bgc.getService().getUuid().toString(), bgc.getUuid().toString());
-            if (knownCharacteristic != null)
-            {
-                sortedCharacteristics.addFirst(bgc);
-            }
-            else
-            {
-                sortedCharacteristics.add(bgc);
-            }
-        }
-
-        for (BluetoothGattCharacteristic c : sortedCharacteristics)
+        for (BluetoothGattCharacteristic c : characteristics)
         {
             AddCharacteristicView(serviceUUID, c.getUuid().toString(), serviceView);
         }

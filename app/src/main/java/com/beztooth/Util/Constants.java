@@ -12,7 +12,8 @@ public class Constants {
         STRING,
         HEX,
         INTEGER,
-        TIME
+        TIME,
+        CUSTOM
     }
 
     private static HashMap<String, String> services = new HashMap<>();
@@ -20,206 +21,14 @@ public class Constants {
     private static HashMap<String, String> descriptors = new HashMap<>();
     private static ArrayList<Device> devices = new ArrayList<>();
 
-    public static class Device
-    {
-        public String MAC;
-        public String Name;
-
-        public ArrayList<Service> Services;
-
-        public Device(String mac, String name, ArrayList<Service> services)
-        {
-            this.MAC = mac;
-            this.Name = name;
-            this.Services = services;
-        }
-
-        public Service GetService(String uuid)
-        {
-            for (Service s : Services)
-            {
-                if (s.UUID.equals(uuid)) return s;
-            }
-
-            return null;
-        }
-    }
-
-    public static class Service
-    {
-        public String UUID;
-        public String Name;
-        public ArrayList<Characteristic> Characteristics;
-
-        public Service(String uuid, String name, ArrayList<Characteristic> characteristics)
-        {
-            this.UUID = uuid;
-            this.Name = name;
-            this.Characteristics = characteristics;
-        }
-
-        public Characteristic GetCharacteristic(String uuid)
-        {
-            for (Characteristic c : Characteristics)
-            {
-                if (c.UUID.equals(uuid)) return c;
-            }
-
-            return null;
-        }
-    }
-
-    public static class Characteristic
-    {
-        public String UUID;
-        public String Name;
-        public CharacteristicReadType ReadType;
-
-        public Characteristic(String uuid, String name)
-        {
-            Initialize(uuid, name, DEFAULT_CHARACTERISTIC_TYPE);
-        }
-
-        public Characteristic(String uuid, String name, CharacteristicReadType readType)
-        {
-            Initialize(uuid, name, readType);
-        }
-
-        private void Initialize(String uuid, String name, CharacteristicReadType readType)
-        {
-            this.UUID = uuid;
-            this.Name = name;
-            this.ReadType = readType;
-        }
-    }
-
-    public static class Devices
-    {
-        public static Device Get(String mac)
-        {
-            for (Device d : devices)
-            {
-                if (d.MAC.equals(mac)) return d;
-            }
-
-            return null;
-        }
-    }
-
-    public static class Services
-    {
-        public static String Get(String serviceUUID)
-        {
-            if (serviceUUID == null) return null;
-            serviceUUID = serviceUUID.toUpperCase();
-
-            String serviceUUIDSubstring = GetUUIDSubstring(serviceUUID);
-            String s = services.get(serviceUUIDSubstring);
-
-            if (s != null) return s;
-
-            // Try retrieving the service by full uuid (less common)
-            return services.get(serviceUUID);
-        }
-
-        public static String Get(String mac, String serviceUUID, boolean deviceOnly)
-        {
-            if (mac != null)
-            {
-                Device d = Devices.Get(mac);
-                if (d != null)
-                {
-                    Service s = d.GetService(serviceUUID);
-                    if (s != null) return s.Name;
-                }
-            }
-
-            // If deviceOnly is not specified, check the constants.
-            return deviceOnly ? null : Get(serviceUUID);
-        }
-    }
-
-    public static class Characteristics
-    {
-        public static Characteristic Get(String characteristicUUID)
-        {
-            if ( characteristicUUID == null) return null;
-            characteristicUUID = characteristicUUID.toUpperCase();
-
-            String uuidSubstring = GetUUIDSubstring(characteristicUUID);
-            Characteristic c = characteristics.get(uuidSubstring);
-
-            if (c != null) return c;
-
-            // Try retrieving the characteristic by full uuid (less common)
-            return characteristics.get(characteristicUUID);
-        }
-
-        public static Characteristic Get(String device, String serviceUUID, String characteristicUUID)
-        {
-            if (device != null)
-            {
-                Device d = Devices.Get(device);
-                if (d != null)
-                {
-                    Service s = d.GetService(serviceUUID);
-                    if (s != null)
-                    {
-                        Characteristic c = s.GetCharacteristic(characteristicUUID);
-                        if (c != null) return c;
-                    }
-                }
-            }
-
-            return Get(characteristicUUID);
-        }
-    }
-
-    // Returns a substring of the UUID, specifically these (x):
-    // 0000xxxx-0000-1000-8000-00805F9B34FB
-    // This is because the gatt specifications only list the assigned number as these 4 digits of the UUID:
-    // https://www.bluetooth.com/specifications/gatt
-    private static String GetUUIDSubstring(String uuid)
-    {
-        if (uuid == null) return "";
-
-        uuid = uuid.toUpperCase();
-
-        // If UUID is already a substring, just return it.
-        if (uuid.length() == 4)
-        {
-            return uuid;
-        }
-
-        if (!HasBaseUUID(uuid)) return "";
-
-        return uuid.substring(4, 8);
-    }
-
-    public static String AddBaseUUID(String uuid)
-    {
-        if (uuid.length() != 4)
-        {
-            return null;
-        }
-
-        return BASE_UUID.substring(0, 4) + uuid.toUpperCase() + BASE_UUID.substring(8);
-    }
-
-    private static boolean HasBaseUUID(String uuid)
-    {
-        // Ensure UUID is of proper length (slashes included).
-        if (uuid.length() != 36) return false;
-
-        // Ensure UUID is formed with proper base address.
-        for (int i = 0; i < BASE_UUID.length(); i++)
-        {
-            if (BASE_UUID.charAt(i) == 'x') continue;
-            if (uuid.charAt(i) != BASE_UUID.charAt(i)) return false;
-        }
-
-        return true;
-    }
+    // Commonly used Services/Characteristics/Descriptors
+    public static final UUIDNamePair SERVICE_CURRENT_TIME = new UUIDNamePair("1805", "Current Time Service");
+    public static final UUIDNamePair SERVICE_ENVIRONMENTAL_SENSING = new UUIDNamePair("181A", "Environmental Sensing");
+    public static final UUIDNamePair CHARACTERISTIC_CURRENT_TIME = new UUIDNamePair("2A2B", "Current Time");
+    public static final UUIDNamePair CHARACTERISTIC_TEMPERATURE = new UUIDNamePair("2A6E", "Temperature");
+    public static final UUIDNamePair CHARACTERISTIC_HUMIDITY = new UUIDNamePair("2A6F", "Humidity");
+    public static final UUIDNamePair CHARACTERISTIC_PRESSURE = new UUIDNamePair("2A6D", "Pressure");
+    public static final UUIDNamePair DESCRIPTOR_CLIENT_CHARACTERISTIC_CONFIGURATION = new UUIDNamePair("2902", "Client Characteristic Configuration");
 
     static
     {
@@ -232,12 +41,12 @@ public class Constants {
         services.put("181B", "Body Composition");
         services.put("181E", "Bond Management Service");
         services.put("181F", "Continuous Glucose Monitoring");
-        services.put("1805", "Current Time Service");
+        services.put(SERVICE_CURRENT_TIME.UUID, SERVICE_CURRENT_TIME.Name);
         services.put("1818", "Cycling Power");
         services.put("1816", "Cycling Speed and Cadence");
         services.put("180A", "Device Information");
         services.put("183C", "Emergency Configuration");
-        services.put("181A", "Environmental Sensing");
+        services.put(SERVICE_ENVIRONMENTAL_SENSING.UUID, SERVICE_ENVIRONMENTAL_SENSING.Name);
         services.put("1826", "Fitness Machine");
         services.put("1801", "Generic Attribute");
         services.put("1808", "Glucose");
@@ -312,7 +121,7 @@ public class Constants {
         characteristics.put("2ACE", new Characteristic("2ACE", "Cross Trainer Data"));
         characteristics.put("2A5C", new Characteristic("2A5C", "CSC Feature"));
         characteristics.put("2A5B", new Characteristic("2A5B", "CSC Measurement"));
-        characteristics.put("2A2B", new Characteristic("2A2B", "Current Time", CharacteristicReadType.TIME));
+        characteristics.put(CHARACTERISTIC_CURRENT_TIME.UUID, new Characteristic(CHARACTERISTIC_CURRENT_TIME, CharacteristicReadType.TIME));
         characteristics.put("2A66", new Characteristic("2A66", "Cycling Power Control Point"));
         characteristics.put("2A65", new Characteristic("2A65", "Cycling Power Feature"));
         characteristics.put("2A63", new Characteristic("2A63", "Cycling Power Measurement"));
@@ -370,7 +179,7 @@ public class Constants {
         characteristics.put("2AB7", new Characteristic("2AB7", "HTTP Headers"));
         characteristics.put("2AB8", new Characteristic("2AB8", "HTTP Status Code"));
         characteristics.put("2ABB", new Characteristic("2ABB", "HTTPS Security"));
-        characteristics.put("2A6F", new Characteristic("2A6F", "Humidity", CharacteristicReadType.INTEGER));
+        characteristics.put(CHARACTERISTIC_HUMIDITY.UUID, new Characteristic(CHARACTERISTIC_HUMIDITY, CharacteristicReadType.INTEGER));
         characteristics.put("2B22", new Characteristic("2B22", "IDD Annunciation Status"));
         characteristics.put("2B25", new Characteristic("2B25", "IDD Command Control Point"));
         characteristics.put("2B26", new Characteristic("2B26", "IDD Command Data"));
@@ -427,7 +236,7 @@ public class Constants {
         characteristics.put("2A2F", new Characteristic("2A2F", "Position 2D"));
         characteristics.put("2A30", new Characteristic("2A30", "Position 3D"));
         characteristics.put("2A69", new Characteristic("2A69", "Position Quality"));
-        characteristics.put("2A6D", new Characteristic("2A6D", "Pressure", CharacteristicReadType.INTEGER));
+        characteristics.put(CHARACTERISTIC_PRESSURE.UUID, new Characteristic(CHARACTERISTIC_PRESSURE, CharacteristicReadType.INTEGER));
         characteristics.put("2A4E", new Characteristic("2A4E", "Protocol Mode"));
         characteristics.put("2A62", new Characteristic("2A62", "Pulse Oximetry Control Point"));
         characteristics.put("2A78", new Characteristic("2A78", "Rainfall"));
@@ -470,7 +279,7 @@ public class Constants {
         characteristics.put("2A48", new Characteristic("2A48", "Supported Unread Alert Category"));
         characteristics.put("2A23", new Characteristic("2A23", "System ID"));
         characteristics.put("2ABC", new Characteristic("2ABC", "TDS Control Point"));
-        characteristics.put("2A6E", new Characteristic("2A6E", "Temperature", CharacteristicReadType.INTEGER));
+        characteristics.put(CHARACTERISTIC_TEMPERATURE.UUID, new Characteristic(CHARACTERISTIC_TEMPERATURE, CharacteristicReadType.INTEGER));
         characteristics.put("2A1F", new Characteristic("2A1F", "Temperature Celsius", CharacteristicReadType.INTEGER));
         characteristics.put("2A20", new Characteristic("2A20", "Temperature Fahrenheit", CharacteristicReadType.INTEGER));
         characteristics.put("2A1C", new Characteristic("2A1C", "Temperature Measurement", CharacteristicReadType.INTEGER));
@@ -507,7 +316,7 @@ public class Constants {
         descriptors.put("2900", "Characteristic Extended Properties");
         descriptors.put("2904", "Characteristic Presentation Format");
         descriptors.put("2901", "Characteristic User Description");
-        descriptors.put("2902", "Client Characteristic Configuration");
+        descriptors.put(DESCRIPTOR_CLIENT_CHARACTERISTIC_CONFIGURATION.UUID, DESCRIPTOR_CLIENT_CHARACTERISTIC_CONFIGURATION.Name);
         descriptors.put("290B", "Environmental Sensing Configuration");
         descriptors.put("290C", "Environmental Sensing Measurement");
         descriptors.put("290D", "Environmental Sensing Trigger Setting");
@@ -520,13 +329,247 @@ public class Constants {
         descriptors.put("290A", "Value Trigger Setting");
     }
 
+    public static final UUIDNamePair LEO_SERVER_V2_ALL_SENSOR_DATA = new UUIDNamePair("DBA51660-5986-44F4-B5A1-55d82EC69890", "All Sensor Data");
+
+    public static final Device LEO_SERVER_V1 =
+        new Device("00:0B:57:1A:88:EF", "LEO SERVER V1", new ArrayList<Service>() {{
+            add(new Service("28CCBA6E-B38E-472A-A26B-A1C1ED9320DA", "Test Sensor", new ArrayList<Characteristic>() {{
+                add(new Characteristic("934DAF64-BBFF-47D2-8DF4-864E2589F019", "Temperature", CharacteristicReadType.INTEGER));
+                add(new Characteristic("FBE1A7F9-F24F-4AE0-9967-41464757EEB9", "Humidity", CharacteristicReadType.INTEGER));
+            }}));
+        }});
+
+    public static final Device LEO_SERVER_V2 =
+        new Device("EC:1B:BD:1C:50:99", "LEO SERVER V2", new ArrayList<Service>() {{
+            add(new Service(SERVICE_ENVIRONMENTAL_SENSING, new ArrayList<Characteristic>() {{
+                add(new Characteristic(LEO_SERVER_V2_ALL_SENSOR_DATA, CharacteristicReadType.CUSTOM));
+            }}));
+        }});
+
     static
     {
-        devices.add(new Device("00:0B:57:1A:88:EF", "Test Device", new ArrayList<Service>() {{
-            add(new Service("28ccba6e-b38e-472a-a26b-a1c1ed9320da", "Test Sensor", new ArrayList<Characteristic>() {{
-                add(new Characteristic("934daf64-bbff-47d2-8df4-864e2589f019", "Temperature", CharacteristicReadType.INTEGER));
-                add(new Characteristic("fbe1a7f9-f24f-4ae0-9967-41464757eeb9", "Humidity", CharacteristicReadType.INTEGER));
-            }}));
-        }}));
+        devices.add(LEO_SERVER_V1);
+        devices.add(LEO_SERVER_V2);
+    }
+
+    public static class UUIDNamePair
+    {
+        public String UUID;
+        public String Name;
+
+        public UUIDNamePair(String uuid, String name)
+        {
+            UUID = uuid;
+            Name = name;
+        }
+
+        public String GetFullUUID()
+        {
+            return AddBaseUUID(UUID);
+        }
+    }
+
+    public static class Device
+    {
+        public String MAC;
+        public String Name;
+
+        public ArrayList<Service> Services;
+
+        public Device(String mac, String name, ArrayList<Service> services)
+        {
+            this.MAC = mac;
+            this.Name = name;
+            this.Services = services;
+        }
+
+        public Service GetService(String uuid)
+        {
+            for (Service s : Services)
+            {
+                if (s.UUID.equalsIgnoreCase(uuid)) return s;
+            }
+
+            return null;
+        }
+    }
+
+    public static class Service
+    {
+        public String UUID;
+        public String Name;
+        public ArrayList<Characteristic> Characteristics;
+
+        public Service(UUIDNamePair anp, ArrayList<Characteristic> characteristics)
+        {
+            this(AddBaseUUID(anp.UUID), anp.Name, characteristics);
+        }
+
+        public Service(String uuid, String name, ArrayList<Characteristic> characteristics)
+        {
+            this.UUID = uuid;
+            this.Name = name;
+            this.Characteristics = characteristics;
+        }
+
+        public Characteristic GetCharacteristic(String uuid)
+        {
+            for (Characteristic c : Characteristics)
+            {
+                if (c.UUID.equalsIgnoreCase(uuid)) return c;
+            }
+
+            return null;
+        }
+    }
+
+    public static class Characteristic
+    {
+        public String UUID;
+        public String Name;
+        public CharacteristicReadType ReadType;
+
+        public Characteristic(String uuid, String name)
+        {
+            this(uuid, name, DEFAULT_CHARACTERISTIC_TYPE);
+        }
+
+        public Characteristic(UUIDNamePair anp, CharacteristicReadType readType)
+        {
+            this(AddBaseUUID(anp.UUID), anp.Name, readType);
+        }
+
+        public Characteristic(String uuid, String name, CharacteristicReadType readType)
+        {
+            this.UUID = uuid;
+            this.Name = name;
+            this.ReadType = readType;
+        }
+    }
+
+    public static class Devices
+    {
+        public static Device Get(String mac)
+        {
+            for (Device d : devices)
+            {
+                if (d.MAC.equalsIgnoreCase(mac)) return d;
+            }
+
+            return null;
+        }
+    }
+
+    public static class Services
+    {
+        public static String Get(String serviceUUID)
+        {
+            if (serviceUUID == null) return null;
+            serviceUUID = serviceUUID.toUpperCase();
+
+            String uuidSubstring = GetUUIDSubstring(serviceUUID);
+            String s = services.get(uuidSubstring);
+
+            if (s != null) return s;
+
+            // Try retrieving the service by full uuid (less common)
+            return services.get(serviceUUID);
+        }
+
+        public static String Get(String mac, String serviceUUID)
+        {
+            if (mac != null)
+            {
+                Device d = Devices.Get(mac);
+                if (d != null)
+                {
+                    Service s = d.GetService(serviceUUID);
+                    if (s != null) return s.Name;
+                }
+            }
+
+            return Get(serviceUUID);
+        }
+    }
+
+    public static class Characteristics
+    {
+        public static Characteristic Get(String characteristicUUID)
+        {
+            if ( characteristicUUID == null) return null;
+            characteristicUUID = characteristicUUID.toUpperCase();
+
+            String uuidSubstring = GetUUIDSubstring(characteristicUUID);
+            Characteristic c = characteristics.get(uuidSubstring);
+
+            if (c != null) return c;
+
+            // Try retrieving the characteristic by full uuid (less common)
+            return characteristics.get(characteristicUUID);
+        }
+
+        public static Characteristic Get(String device, String serviceUUID, String characteristicUUID)
+        {
+            if (device != null)
+            {
+                Device d = Devices.Get(device);
+                if (d != null)
+                {
+                    Service s = d.GetService(serviceUUID);
+                    if (s != null)
+                    {
+                        Characteristic c = s.GetCharacteristic(characteristicUUID);
+                        if (c != null) return c;
+                    }
+                }
+            }
+
+            return Get(characteristicUUID);
+        }
+    }
+
+    // Returns a substring of the UUID, specifically these (x):
+    // 0000xxxx-0000-1000-8000-00805F9B34FB
+    // This is because the gatt specifications only list the assigned number as these 4 digits of the UUID:
+    // https://www.bluetooth.com/specifications/gatt
+    private static String GetUUIDSubstring(String uuid)
+    {
+        if (uuid == null) return "";
+
+        // If UUID is already a substring, just return it.
+        if (uuid.length() == 4)
+        {
+            return uuid;
+        }
+
+        if (!HasBaseUUID(uuid)) return "";
+
+        return uuid.substring(4, 8);
+    }
+
+    public static String AddBaseUUID(String uuid)
+    {
+        if (uuid.length() != 4)
+        {
+            return uuid;
+        }
+
+        return BASE_UUID.substring(0, 4) + uuid.toUpperCase() + BASE_UUID.substring(8);
+    }
+
+    private static boolean HasBaseUUID(String uuid)
+    {
+        // Ensure UUID is of proper length (slashes included).
+        if (uuid.length() != 36) return false;
+        uuid = uuid.toUpperCase();
+
+        // Ensure UUID is formed with proper base address.
+        for (int i = 0; i < BASE_UUID.length(); i++)
+        {
+            if (BASE_UUID.charAt(i) == 'x') continue;
+            if (uuid.charAt(i) != BASE_UUID.charAt(i)) return false;
+        }
+
+        return true;
     }
 }

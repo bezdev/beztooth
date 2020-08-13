@@ -13,12 +13,13 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AppCompatActivity;
 import android.widget.Toast;
 
 import com.beztooth.Bluetooth.ConnectionManager;
 import com.beztooth.R;
 
-public abstract class BluetoothActivity extends Activity
+public abstract class BluetoothActivity extends AppCompatActivity
 {
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final int REQUEST_ENABLE_BT = 1;

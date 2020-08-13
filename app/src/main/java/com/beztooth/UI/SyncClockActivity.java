@@ -19,7 +19,7 @@ import com.beztooth.Util.Constants;
 public class SyncClockActivity extends BluetoothActivity
 {
     private static final String TAG = "SyncClockActivity";
-    private static final String CLOCK_DEVICE_PREFIX = "Sergei";
+    private static final String CLOCK_DEVICE_PREFIX = "Clock";
 
     private ProgressBar m_ScanProgress;
     private DeviceSelectView m_DeviceSelectView;
@@ -48,7 +48,7 @@ public class SyncClockActivity extends BluetoothActivity
                 ConnectionManager.Device device = m_ConnectionManager.GetDevice(intent.getStringExtra(ConnectionManager.ADDRESS));
                 if (device == null) return;
 
-                BluetoothGattCharacteristic c = device.GetCharacteristic(Constants.AddBaseUUID("1805"), Constants.AddBaseUUID("2A2B"));
+                BluetoothGattCharacteristic c = device.GetCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID());
                 if (c == null) return;
 
                 // Set value to current time
@@ -175,7 +175,8 @@ public class SyncClockActivity extends BluetoothActivity
                 m_DeviceSelectView.SetDeviceStatusMessage(address, "");
 
                 ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
-                m_ConnectionManager.ConnectDevice(device, true, false);
+                device.SetReadCharacteristicsWhenDiscovered(false);
+                m_ConnectionManager.ConnectDevice(device);
             }
         });
 
