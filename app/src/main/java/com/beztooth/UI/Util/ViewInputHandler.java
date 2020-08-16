@@ -1,4 +1,4 @@
-package com.beztooth.UI;
+package com.beztooth.UI.Util;
 
 import android.content.Context;
 import android.view.MotionEvent;
@@ -7,7 +7,7 @@ import android.view.animation.Animation;
 
 public class ViewInputHandler
 {
-    interface OnClick
+    public interface OnClick
     {
         void Do(View view);
     }

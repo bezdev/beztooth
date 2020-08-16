@@ -17,36 +17,42 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:orientation="vertical">
-        <com.beztooth.UI.BezButton
+        <com.beztooth.UI.Util.BezButton
             android:id="@+id/scanButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="20dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
             android:padding="25dp"
             android:background="@drawable/select_border"
-            android:text="Scan"
+            android:text="@string/scan"
             android:textColor="@color/BezBlue"
             android:textSize="36sp"
             android:textStyle="bold" />
-        <com.beztooth.UI.BezButton
+        <com.beztooth.UI.Util.BezButton
             android:id="@+id/syncClockButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="20dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
             android:padding="25dp"
             android:background="@drawable/select_border"
-            android:text="Sync Clock"
+            android:text="@string/sync_clock"
             android:textColor="@color/BezBlue"
             android:textSize="36sp"
             android:textStyle="bold" />
-        <com.beztooth.UI.BezButton
+        <com.beztooth.UI.Util.BezButton
             android:id="@+id/thermometerButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="20dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
             android:padding="25dp"
             android:background="@drawable/select_border"
-            android:text="Thermometer"
+            android:text="@string/thermometer"
             android:textColor="@color/BezBlue"
             android:textSize="36sp"
             android:textStyle="bold" />

@@ -1,4 +1,4 @@
-package com.beztooth.UI;
+package com.beztooth.UI.Activities;
 
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.BroadcastReceiver;
@@ -14,7 +14,10 @@ import android.widget.ProgressBar;
 
 import com.beztooth.Bluetooth.ConnectionManager;
 import com.beztooth.R;
+import com.beztooth.UI.Util.DeviceSelectView;
+import com.beztooth.UI.Util.ViewInputHandler;
 import com.beztooth.Util.Constants;
+import com.beztooth.Util.Util;
 
 public class SyncClockActivity extends BluetoothActivity
 {
@@ -52,7 +55,7 @@ public class SyncClockActivity extends BluetoothActivity
                 if (c == null) return;
 
                 // Set value to current time
-                c.setValue(ConnectionManager.GetTimeInBytes(System.currentTimeMillis()));
+                c.setValue(Util.GetTimeInBytes(System.currentTimeMillis()));
                 device.WriteCharacteristic(c);
                 device.Disconnect();
             }
@@ -68,7 +71,7 @@ public class SyncClockActivity extends BluetoothActivity
             }
             else if (action.equals(ConnectionManager.ON_CHARACTERISTIC_WRITE))
             {
-                String syncedTime = ConnectionManager.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.TIME);
+                String syncedTime = Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.TIME);
                 m_DeviceSelectView.SetDeviceStatusMessage(intent.getStringExtra(ConnectionManager.ADDRESS), "Synced time: " + syncedTime);
             }
         }
@@ -154,7 +157,7 @@ public class SyncClockActivity extends BluetoothActivity
 
         m_ScanProgress.setVisibility(View.VISIBLE);
 
-        m_ConnectionManager.Scan();
+        m_ConnectionManager.Scan(false);
     }
 
     private void AddDevice(String address)

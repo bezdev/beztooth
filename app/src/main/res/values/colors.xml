@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
-    <color name="red">#FF0000</color>
-    <color name="softwhite">#FBEEE4</color>
+    <color name="Primary">#3F51B5</color>
+    <color name="PrimaryDark">#303F9F</color>
+    <color name="Accent">#FF4081</color>
+    <color name="Red">#FF0000</color>
+    <color name="SoftWhite">#FBEEE4</color>
     <color name="BezBlue">#3F51B5</color>
-    <color name="uuidGray">#7e7e7e</color>
-    <color name="commentGreen">#008200</color>
-    <color name="connectedGreen">#39ff14</color>
-    <color name="inactiveGray">#a9a9a9</color>
-    <color name="activeBlue">#9dd9f3</color>
+    <color name="UUIDGray">#7e7e7e</color>
+    <color name="CommentGreen">#008200</color>
+    <color name="ConnectedGreen">#39ff14</color>
+    <color name="InactiveGray">#a9a9a9</color>
+    <color name="ActiveBlue">#9dd9f3</color>
+    <color name="ActiveGreen">#90eebf</color>
 </resources>

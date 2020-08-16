@@ -1,4 +1,4 @@
-package com.beztooth.UI;
+package com.beztooth.UI.Util;
 
 import android.content.Context;
 import android.support.v7.widget.AppCompatButton;

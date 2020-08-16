@@ -1,7 +1,44 @@
 package com.beztooth.Util;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Calendar;
+import java.util.Locale;
+
+import static android.graphics.Color.rgb;
+
 public class Util
 {
+    public static class Color
+    {
+        public int R;
+        public int G;
+        public int B;
+
+        public Color(int r, int g, int b)
+        {
+            R = r;
+            G = g;
+            B = b;
+        }
+
+        public int GetColor()
+        {
+            return rgb(R, G, B);
+        }
+
+        public static int GetColorInSpectrum(Color start, Color end, float percent)
+        {
+            if (percent > 100) percent = 100;
+
+            Color c = new Color(
+                Math.round(start.R + (percent / 100.f * (end.R - start.R))),
+                Math.round(start.G + (percent / 100.f * (end.G - start.G))),
+                Math.round(start.B + (percent / 100.f * (end.B - start.B))));
+
+            return c.GetColor();
+        }
+    }
 
     public static String GetCallerName()
     {
@@ -24,6 +61,106 @@ public class Util
             }
 
             if (!isBlacklistedMethod) return methodName;
+        }
+
+        return "";
+    }
+
+    public static boolean IsBufferZero(byte[] buffer)
+    {
+        for (byte b : buffer)
+        {
+            if (b != 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static byte GetDayCode(int day)
+    {
+        switch (day)
+        {
+            case Calendar.MONDAY:
+                return 1;
+            case Calendar.TUESDAY:
+                return 2;
+            case Calendar.WEDNESDAY:
+                return 3;
+            case Calendar.THURSDAY:
+                return 4;
+            case Calendar.FRIDAY:
+                return 5;
+            case Calendar.SATURDAY:
+                return 6;
+            case Calendar.SUNDAY:
+                return 7;
+            default:
+                return 0;
+        }
+    }
+
+    public static byte[] GetTimeInBytes(long timestamp)
+    {
+        Calendar time = Calendar.getInstance();
+        time.setTimeInMillis(timestamp);
+
+        byte[] field = new byte[10];
+
+        // Year
+        int year = time.get(Calendar.YEAR);
+        field[0] = (byte) (year & 0xFF);
+        field[1] = (byte) ((year >> 8) & 0xFF);
+        // Month
+        field[2] = (byte) (time.get(Calendar.MONTH) + 1);
+        // Day
+        field[3] = (byte) time.get(Calendar.DATE);
+        // Hours
+        field[4] = (byte) time.get(Calendar.HOUR_OF_DAY);
+        // Minutes
+        field[5] = (byte) time.get(Calendar.MINUTE);
+        // Seconds
+        field[6] = (byte) time.get(Calendar.SECOND);
+        // Day of Week (1-7)
+        field[7] = GetDayCode(time.get(Calendar.DAY_OF_WEEK));
+        // Fractions256
+        field[8] = (byte) (time.get(Calendar.MILLISECOND) / 256);
+
+        field[9] = 0;
+
+        return field;
+    }
+
+    // Get string representation of the byte data, formatted depending on the data type.
+    public static String GetDataString(byte[] data, Constants.CharacteristicReadType type)
+    {
+        if (type == Constants.CharacteristicReadType.STRING)
+        {
+            return new String(data);
+        }
+        else if (type == Constants.CharacteristicReadType.HEX || type == Constants.CharacteristicReadType.CUSTOM)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < data.length; i++)
+            {
+                sb.append(String.format("%02X", data[i]));
+                if (i <= data.length - 1) sb.append(" ");
+            }
+            return sb.toString();
+        }
+        else if (type == Constants.CharacteristicReadType.INTEGER)
+        {
+            return "" + ByteBuffer.allocate(4).put(data).order(ByteOrder.LITTLE_ENDIAN).getInt(0);
+        }
+        else if (type == Constants.CharacteristicReadType.TIME)
+        {
+            if (data.length != 10) return "";
+
+            int year = (data[0] & 0xFF) + ((data[1] & 0xFF) << 8);
+
+            return String.format(Locale.getDefault(), "%d/%02d/%02d %02d:%02d:%02d", data[2], data[3], year, data[4], data[5], data[6]);
         }
 
         return "";

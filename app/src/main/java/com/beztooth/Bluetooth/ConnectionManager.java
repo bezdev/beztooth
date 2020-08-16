@@ -24,14 +24,10 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -572,12 +568,16 @@ public class ConnectionManager extends Service
         {
             if (!IsConnected()) return;
 
+            if (characteristic == null) return;
+
             QueueGattAction(new GattReadCharacteristic(characteristic));
         }
 
         public void WriteCharacteristic(BluetoothGattCharacteristic characteristic)
         {
             if (!IsConnected()) return;
+
+            if (characteristic == null) return;
 
             QueueGattAction(new GattWriteCharacteristic(characteristic));
         }
@@ -596,7 +596,7 @@ public class ConnectionManager extends Service
             QueueGattAction(new GattWriteDescriptor(descriptor));
         }
 
-        public BluetoothGattService GetService(String service)
+        private BluetoothGattService GetService(String service)
         {
             if (!IsConnected()) return null;
 
@@ -610,6 +610,14 @@ public class ConnectionManager extends Service
             BluetoothGattService s = GetService(serviceUUID);
             if (s == null) return null;
             return s.getCharacteristic(UUID.fromString(characteristicUUID));
+        }
+
+        public int GetCharacteristicProperties(String serviceUUID, String characteristicUUID)
+        {
+            BluetoothGattCharacteristic c = GetCharacteristic(serviceUUID, characteristicUUID);
+            if (c == null) return 0;
+
+            return c.getProperties();
         }
 
         public void SetCharacteristicNotification(BluetoothGattCharacteristic characteristic, boolean enable)
@@ -956,9 +964,11 @@ public class ConnectionManager extends Service
     }
 
     // Scan for Bluetooth LE devices.
-    public void Scan()
+    public void Scan(boolean stopScan)
     {
         if (!Initialize()) return;
+
+        if (stopScan) StopScan();
 
         // Fresh scan, need to remove all devices that aren't connected since a new scan will not
         // show devices that are already connected.
@@ -1018,7 +1028,7 @@ public class ConnectionManager extends Service
         m_IsScanning = true;
     }
 
-    public void StopScan()
+    private void StopScan()
     {
         if (!Initialize() || !m_IsScanning) return;
 
@@ -1062,93 +1072,6 @@ public class ConnectionManager extends Service
         if (!device.IsConnected()) return;
 
         device.Disconnect();
-    }
-
-    private static byte GetDayCode(int day)
-    {
-        switch (day)
-        {
-            case Calendar.MONDAY:
-                return 1;
-            case Calendar.TUESDAY:
-                return 2;
-            case Calendar.WEDNESDAY:
-                return 3;
-            case Calendar.THURSDAY:
-                return 4;
-            case Calendar.FRIDAY:
-                return 5;
-            case Calendar.SATURDAY:
-                return 6;
-            case Calendar.SUNDAY:
-                return 7;
-            default:
-                return 0;
-        }
-    }
-
-    public static byte[] GetTimeInBytes(long timestamp)
-    {
-        Calendar time = Calendar.getInstance();
-        time.setTimeInMillis(timestamp);
-
-        byte[] field = new byte[10];
-
-        // Year
-        int year = time.get(Calendar.YEAR);
-        field[0] = (byte) (year & 0xFF);
-        field[1] = (byte) ((year >> 8) & 0xFF);
-        // Month
-        field[2] = (byte) (time.get(Calendar.MONTH) + 1);
-        // Day
-        field[3] = (byte) time.get(Calendar.DATE);
-        // Hours
-        field[4] = (byte) time.get(Calendar.HOUR_OF_DAY);
-        // Minutes
-        field[5] = (byte) time.get(Calendar.MINUTE);
-        // Seconds
-        field[6] = (byte) time.get(Calendar.SECOND);
-        // Day of Week (1-7)
-        field[7] = GetDayCode(time.get(Calendar.DAY_OF_WEEK));
-        // Fractions256
-        field[8] = (byte) (time.get(Calendar.MILLISECOND) / 256);
-
-        field[9] = 0;
-
-        return field;
-    }
-
-    // Get string representation of the byte data, formatted depending on the data type.
-    public static String GetDataString(byte[] data, Constants.CharacteristicReadType type)
-    {
-        if (type == Constants.CharacteristicReadType.STRING)
-        {
-            return new String(data);
-        }
-        else if (type == Constants.CharacteristicReadType.HEX || type == Constants.CharacteristicReadType.CUSTOM)
-        {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < data.length; i++)
-            {
-                sb.append(String.format("%02X", data[i]));
-                if (i <= data.length - 1) sb.append(" ");
-            }
-            return sb.toString();
-        }
-        else if (type == Constants.CharacteristicReadType.INTEGER)
-        {
-            return "" + ByteBuffer.allocate(4).put(data).order(ByteOrder.LITTLE_ENDIAN).getInt(0);
-        }
-        else if (type == Constants.CharacteristicReadType.TIME)
-        {
-            if (data.length != 10) return "";
-
-            int year = (data[0] & 0xFF) + ((data[1] & 0xFF) << 8);
-
-            return String.format(Locale.getDefault(), "%d/%02d/%02d %02d:%02d:%02d", year, data[2], data[3], data[4], data[5], data[6]);
-        }
-
-        return "";
     }
 
     private final BroadcastReceiver m_Receiver = new BroadcastReceiver()

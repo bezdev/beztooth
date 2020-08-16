@@ -1,8 +1,8 @@
-<com.beztooth.UI.BezContainer xmlns:android="http://schemas.android.com/apk/res/android"
+<com.beztooth.UI.Util.BezContainer xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
-    <com.beztooth.UI.BezContainer
+    <com.beztooth.UI.Util.BezContainer
         android:id="@+id/device_select_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -32,7 +32,7 @@
                     android:id="@+id/device_select_mac"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/uuidGray"
+                    android:textColor="@color/UUIDGray"
                     android:textSize="16sp" />
             </LinearLayout>
             <LinearLayout
@@ -54,7 +54,7 @@
                     android:layout_width="wrap_content"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_close_black_24dp"
-                    android:tint="@color/red"
+                    android:tint="@color/Red"
                     android:visibility="gone" />
             </LinearLayout>
         </LinearLayout>
@@ -63,7 +63,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@color/BezBlue"
-            android:textSize="14dp"
+            android:textSize="14sp"
             android:visibility="gone" />
-    </com.beztooth.UI.BezContainer>
-</com.beztooth.UI.BezContainer>
+    </com.beztooth.UI.Util.BezContainer>
+</com.beztooth.UI.Util.BezContainer>

@@ -1,4 +1,4 @@
-package com.beztooth.UI;
+package com.beztooth.UI.Activities;
 
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.BroadcastReceiver;
@@ -18,11 +18,22 @@ import android.widget.TextView;
 import com.beztooth.Bluetooth.ConnectionManager;
 import com.beztooth.R;
 import com.beztooth.Util.Constants;
+import com.beztooth.Util.Util;
+
+import java.util.Locale;
 
 public class ThermometerActivity extends BluetoothActivity
 {
     private static final String TAG = "ThermometerActivity";
     private static final Constants.Device[] SUPPORTED_DEVICES = { Constants.LEO_SERVER_V2 };
+
+    private static final Util.Color COLD_COLOR = new Util.Color(69, 128, 186);
+    private static final Util.Color HOT_COLOR = new Util.Color(254, 0, 0);
+    private static final Util.Color NOT_HUMID_COLOR = COLD_COLOR;
+    private static final Util.Color HUMID_COLOR = new Util.Color(34, 139, 34);
+    private static final float COLD_TEMPERATURE = 4.44444f;
+    private static final float HOT_TEMPERATURE = 35.2222f;
+
 
     private ConnectionManager.Device m_Device;
     private boolean m_IsConnected;
@@ -41,9 +52,8 @@ public class ThermometerActivity extends BluetoothActivity
             {
                 if (m_Device == null)
                 {
-                    // Start fresh scan again.
-                    m_ConnectionManager.StopScan();
-                    m_ConnectionManager.Scan();
+                    // Start fresh scan.
+                    m_ConnectionManager.Scan(true);
                 }
             }
             else if (action.equals(ConnectionManager.ON_DEVICE_SCANNED))
@@ -162,8 +172,7 @@ public class ThermometerActivity extends BluetoothActivity
         if (!m_IsConnected)
         {
             // Start fresh scan.
-            m_ConnectionManager.StopScan();
-            m_ConnectionManager.Scan();
+            m_ConnectionManager.Scan(true);
         }
     }
 
@@ -183,7 +192,8 @@ public class ThermometerActivity extends BluetoothActivity
         switch (item.getItemId()) {
             case R.id.menu_sync_time:
                 BluetoothGattCharacteristic c = m_Device.GetCharacteristic(Constants.AddBaseUUID(Constants.SERVICE_CURRENT_TIME.UUID), Constants.AddBaseUUID(Constants.CHARACTERISTIC_CURRENT_TIME.UUID));
-                c.setValue(ConnectionManager.GetTimeInBytes(System.currentTimeMillis()));
+                if (c == null) return true;
+                c.setValue(Util.GetTimeInBytes(System.currentTimeMillis()));
                 m_Device.WriteCharacteristic(c);
                 m_Device.ReadCharacteristic(c);
                 return true;
@@ -204,22 +214,20 @@ public class ThermometerActivity extends BluetoothActivity
     {
         if (characteristic.equalsIgnoreCase(Constants.AddBaseUUID(Constants.CHARACTERISTIC_TEMPERATURE.UUID)))
         {
-            TextView temperatureView = findViewById(R.id.temperature);
-            temperatureView.setText(ConnectionManager.GetDataString(data, Constants.CharacteristicReadType.INTEGER) + "\u2103");
+            UpdateTemperature(Util.GetDataString(data, Constants.CharacteristicReadType.INTEGER));
         }
         else if (characteristic.equalsIgnoreCase(Constants.AddBaseUUID(Constants.CHARACTERISTIC_HUMIDITY.UUID)))
         {
-            TextView humidityView = findViewById(R.id.humidity);
-            humidityView.setText(ConnectionManager.GetDataString(data, Constants.CharacteristicReadType.INTEGER) + "%");
+            UpdateHumidity(Util.GetDataString(data, Constants.CharacteristicReadType.INTEGER));
         }
         else if (characteristic.equalsIgnoreCase(Constants.AddBaseUUID(Constants.CHARACTERISTIC_PRESSURE.UUID)))
         {
             TextView pressureView = findViewById(R.id.pressure);
-            pressureView.setText(ConnectionManager.GetDataString(data, Constants.CharacteristicReadType.INTEGER) + " Pa");
+            pressureView.setText(String.format(Locale.getDefault(), "%s Pa", Util.GetDataString(data, Constants.CharacteristicReadType.INTEGER)));
         }
         else if (characteristic.equalsIgnoreCase(Constants.AddBaseUUID(Constants.CHARACTERISTIC_CURRENT_TIME.UUID)))
         {
-            String[] dateData = ConnectionManager.GetDataString(data, Constants.CharacteristicReadType.TIME).split(" ");
+            String[] dateData = Util.GetDataString(data, Constants.CharacteristicReadType.TIME).split(" ");
             TextView dateView = findViewById(R.id.date);
             dateView.setText(dateData[0]);
             TextView timeView = findViewById(R.id.time);
@@ -227,24 +235,46 @@ public class ThermometerActivity extends BluetoothActivity
         }
         else if (characteristic.equalsIgnoreCase(Constants.AddBaseUUID(Constants.LEO_SERVER_V2_ALL_SENSOR_DATA.UUID)))
         {
-            // TODO: move to util
-            boolean isZero = true;
-            for (byte b : data)
-            {
-                if (b != 0)
-                {
-                    isZero = false;
-                    break;
-                }
-            }
-            if (isZero) return;
+            if (Util.IsBufferZero(data)) return;
 
-            TextView temperatureView = findViewById(R.id.temperature);
-            temperatureView.setText(ConnectionManager.GetDataString(new byte[] { data[0] }, Constants.CharacteristicReadType.INTEGER) + " \u2103");
-            TextView humidityView = findViewById(R.id.humidity);
-            humidityView.setText(ConnectionManager.GetDataString(new byte[] { data[1] }, Constants.CharacteristicReadType.INTEGER) + " %");
+            UpdateTemperature(Util.GetDataString(new byte[] { data[0] }, Constants.CharacteristicReadType.INTEGER));
+            UpdateHumidity(Util.GetDataString(new byte[] { data[1] }, Constants.CharacteristicReadType.INTEGER));
             TextView pressureView = findViewById(R.id.pressure);
-            pressureView.setText(ConnectionManager.GetDataString(new byte[] { data[2], data[3], data[4], data[5] }, Constants.CharacteristicReadType.INTEGER) + " Pa");
+            pressureView.setText(String.format(Locale.getDefault(), "%s Pa", Util.GetDataString(new byte[] { data[2], data[3], data[4], data[5] }, Constants.CharacteristicReadType.INTEGER)));
         }
+    }
+
+    private void UpdateTemperature(String temperature)
+    {
+        TextView temperatureView = findViewById(R.id.temperature);
+        temperatureView.setText(String.format(Locale.getDefault(), "%s\u2103", temperature, Constants.CharacteristicReadType.INTEGER));
+
+        float temp = Float.parseFloat(temperature);
+        int color;
+        if (temp < COLD_TEMPERATURE)
+        {
+            color = COLD_COLOR.GetColor();
+        }
+        else if (temp > HOT_TEMPERATURE)
+        {
+            color = HOT_COLOR.GetColor();
+        }
+        else
+        {
+            color = Util.Color.GetColorInSpectrum(COLD_COLOR, HOT_COLOR, 100.f * (temp - COLD_TEMPERATURE) / (HOT_TEMPERATURE-COLD_TEMPERATURE));
+        }
+
+        temperatureView.setTextColor(color);
+    }
+
+    private void UpdateHumidity(String humidity)
+    {
+        TextView humidityView = findViewById(R.id.humidity);
+        humidityView.setText(String.format(Locale.getDefault(), "%s%%", humidity));
+
+        float humid = Float.parseFloat(humidity);
+        int color = Util.Color.GetColorInSpectrum(NOT_HUMID_COLOR, HUMID_COLOR, humid);
+
+        humidityView.setTextColor(color);
     }
 }

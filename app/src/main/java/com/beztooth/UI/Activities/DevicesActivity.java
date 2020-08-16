@@ -1,4 +1,4 @@
-package com.beztooth.UI;
+package com.beztooth.UI.Activities;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -13,6 +13,8 @@ import android.widget.ProgressBar;
 
 import com.beztooth.Bluetooth.ConnectionManager;
 import com.beztooth.R;
+import com.beztooth.UI.Util.DeviceSelectView;
+import com.beztooth.UI.Util.ViewInputHandler;
 import com.beztooth.Util.Logger;
 
 public class DevicesActivity extends BluetoothActivity
@@ -61,7 +63,7 @@ public class DevicesActivity extends BluetoothActivity
         m_ScanProgress = findViewById(R.id.scanProgress);
         m_ScanProgress.setVisibility(View.GONE);
 
-        m_DeviceSelectView = new DeviceSelectView(getApplicationContext(), (LinearLayout)findViewById(R.id.device_scroll), true);
+        m_DeviceSelectView  = new DeviceSelectView(getApplicationContext(), (LinearLayout)findViewById(R.id.device_scroll), true);
 
         AddEventListeners();
     }
@@ -130,7 +132,7 @@ public class DevicesActivity extends BluetoothActivity
 
         m_ScanProgress.setVisibility(View.VISIBLE);
 
-        m_ConnectionManager.Scan();
+        m_ConnectionManager.Scan(false);
     }
 
     private void AddDevice(String address)

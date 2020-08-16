@@ -1,4 +1,4 @@
-package com.beztooth.UI;
+package com.beztooth.UI.Activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -6,6 +6,8 @@ import android.view.View;
 
 import com.beztooth.Bluetooth.ConnectionManager;
 import com.beztooth.R;
+import com.beztooth.UI.Util.BezButton;
+import com.beztooth.UI.Util.ViewInputHandler;
 
 public class Beztooth extends BluetoothActivity
 {

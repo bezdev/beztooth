@@ -1,8 +1,9 @@
-<com.beztooth.UI.BezButton
+<com.beztooth.UI.Util.BezButton
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/characteristic_action"
-    android:background="@drawable/select_border_small"
+    android:background="@drawable/select_border_medium"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:layout_marginLeft="10dp"
     android:textStyle="bold"
     android:textColor="@color/BezBlue" />

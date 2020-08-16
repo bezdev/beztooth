@@ -1,25 +1,25 @@
 <resources>
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorPrimary">@color/Primary</item>
+        <item name="colorPrimaryDark">@color/PrimaryDark</item>
+        <item name="colorAccent">@color/Accent</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:windowNoTitle">true</item>
         <item name="actionBarTheme">@style/AppTheme.Toolbar</item>
     </style>
 
     <style name="AppTheme.Toolbar" parent="Widget.AppCompat.ActionBar.Solid">
-        <item name="android:textColorPrimary">@color/softwhite</item>
-        <item name="android:textColor">@color/colorPrimaryDark</item>
-        <item name="android:buttonTint">@color/colorPrimaryDark</item>
-        <item name="android:actionMenuTextColor">@color/colorPrimaryDark</item>
-        <item name="android:textColorSecondary">@color/softwhite</item>
+        <item name="android:textColorPrimary">@color/SoftWhite</item>
+        <item name="android:textColor">@color/PrimaryDark</item>
+        <item name="android:buttonTint">@color/PrimaryDark</item>
+        <item name="android:actionMenuTextColor">@color/PrimaryDark</item>
+        <item name="android:textColorSecondary">@color/SoftWhite</item>
         <item name="buttonStyle">@style/AppTheme.Toolbar.Button</item>
     </style>
 
     <style name="AppTheme.Toolbar.Button" parent="Widget.AppCompat.Button">
         <item name="android:background">@drawable/select_border_small</item>
-        <item name="android:textColor">@color/softwhite</item>
-        <item name="android:backgroundTint">@color/colorAccent</item>
+        <item name="android:textColor">@color/SoftWhite</item>
+        <item name="android:backgroundTint">@color/Accent</item>
     </style>
 </resources>
