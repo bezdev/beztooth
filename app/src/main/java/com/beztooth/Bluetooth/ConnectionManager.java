@@ -638,6 +638,24 @@ public class ConnectionManager extends Service
             WriteDescriptor(d);
         }
 
+        public void SetCharacteristicIndication(BluetoothGattCharacteristic characteristic, boolean enable)
+        {
+            if (!IsConnected()) return;
+            if (characteristic == null) return;
+            if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) != BluetoothGattCharacteristic.PROPERTY_INDICATE) return;
+
+            // Get Client Characteristic Configuration descriptor
+            BluetoothGattDescriptor d = characteristic.getDescriptor(UUID.fromString(Constants.DESCRIPTOR_CLIENT_CHARACTERISTIC_CONFIGURATION.GetFullUUID()));
+            if (d == null) return;
+
+            // Enable notify on client
+            m_Gatt.setCharacteristicNotification(characteristic, enable);
+
+            // Enable notify on server
+            d.setValue(enable ? BluetoothGattDescriptor.ENABLE_INDICATION_VALUE : new byte[] { 0x00, 0x00 });
+            WriteDescriptor(d);
+        }
+
         public void SetReadCharacteristicsWhenDiscovered(boolean readCharacteristicsWhenDiscovered)
         {
             m_ReadCharacteristicsWhenDiscovered = readCharacteristicsWhenDiscovered;

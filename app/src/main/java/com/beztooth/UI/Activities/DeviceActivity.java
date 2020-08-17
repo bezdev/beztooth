@@ -333,11 +333,13 @@ public class DeviceActivity extends BluetoothActivity
         private String m_ServiceUUID;
         private String m_CharacteristicUUID;
         private boolean m_IsNotifyEnabled;
+        private boolean m_IsIndicateEnabled;
 
         public CharacteristicActionOnClick(String serviceUUID, String characteristicUUID) {
             m_ServiceUUID = serviceUUID;
             m_CharacteristicUUID = characteristicUUID;
             m_IsNotifyEnabled = false;
+            m_IsIndicateEnabled = false;
         }
 
         @Override
@@ -372,7 +374,22 @@ public class DeviceActivity extends BluetoothActivity
                     view.setBackgroundResource(R.drawable.select_border_medium);
                 }
 
-                m_Device.SetCharacteristicNotification(m_Device.GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID), m_IsNotifyEnabled);
+                m_Device.SetCharacteristicNotification(m_Device.GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID), m_IsNotifyEnabled || m_IsNotifyEnabled);
+            }
+            else if (action == BluetoothGattCharacteristic.PROPERTY_INDICATE)
+            {
+                m_IsIndicateEnabled = !m_IsIndicateEnabled;
+
+                if (m_IsIndicateEnabled)
+                {
+                    view.setBackgroundResource(R.drawable.select_border_medium_active);
+                }
+                else
+                {
+                    view.setBackgroundResource(R.drawable.select_border_medium);
+                }
+
+                m_Device.SetCharacteristicIndication(m_Device.GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID), m_IsNotifyEnabled || m_IsIndicateEnabled);
             }
         }
     };

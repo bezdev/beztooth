@@ -9,6 +9,8 @@ import static android.graphics.Color.rgb;
 
 public class Util
 {
+    public static final float MMHG_PER_PA = 0.00750062f;
+
     public static class Color
     {
         public int R;
@@ -164,5 +166,10 @@ public class Util
         }
 
         return "";
+    }
+
+    public static float ConvertPascalToMMHG(float pascal)
+    {
+        return pascal * MMHG_PER_PA;
     }
 }

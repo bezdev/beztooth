@@ -8,6 +8,8 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.Toolbar;
+import android.text.SpannableString;
+import android.text.style.RelativeSizeSpan;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -222,8 +224,7 @@ public class ThermometerActivity extends BluetoothActivity
         }
         else if (characteristic.equalsIgnoreCase(Constants.AddBaseUUID(Constants.CHARACTERISTIC_PRESSURE.UUID)))
         {
-            TextView pressureView = findViewById(R.id.pressure);
-            pressureView.setText(String.format(Locale.getDefault(), "%s Pa", Util.GetDataString(data, Constants.CharacteristicReadType.INTEGER)));
+            UpdatePressure(Util.GetDataString(data, Constants.CharacteristicReadType.INTEGER));
         }
         else if (characteristic.equalsIgnoreCase(Constants.AddBaseUUID(Constants.CHARACTERISTIC_CURRENT_TIME.UUID)))
         {
@@ -239,8 +240,7 @@ public class ThermometerActivity extends BluetoothActivity
 
             UpdateTemperature(Util.GetDataString(new byte[] { data[0] }, Constants.CharacteristicReadType.INTEGER));
             UpdateHumidity(Util.GetDataString(new byte[] { data[1] }, Constants.CharacteristicReadType.INTEGER));
-            TextView pressureView = findViewById(R.id.pressure);
-            pressureView.setText(String.format(Locale.getDefault(), "%s Pa", Util.GetDataString(new byte[] { data[2], data[3], data[4], data[5] }, Constants.CharacteristicReadType.INTEGER)));
+            UpdatePressure(Util.GetDataString(new byte[] { data[2], data[3], data[4], data[5] }, Constants.CharacteristicReadType.INTEGER));
         }
     }
 
@@ -276,5 +276,16 @@ public class ThermometerActivity extends BluetoothActivity
         int color = Util.Color.GetColorInSpectrum(NOT_HUMID_COLOR, HUMID_COLOR, humid);
 
         humidityView.setTextColor(color);
+    }
+
+    private void UpdatePressure(String pressure)
+    {
+        String pressureText = String.format(Locale.getDefault(), "%.1fmmHg", Util.ConvertPascalToMMHG(Float.parseFloat(pressure)));
+        int unitIndex = pressureText.indexOf("mmHg");
+
+        TextView pressureView = findViewById(R.id.pressure);
+        SpannableString ss = new SpannableString(pressureText);
+        ss.setSpan(new RelativeSizeSpan(.5f), unitIndex, pressureText.length(), 0);
+        pressureView.setText(ss);
     }
 }
