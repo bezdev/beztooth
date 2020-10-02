@@ -77,6 +77,7 @@ public class ConnectionManager extends Service
 
     private boolean m_IsInitialized;
     private boolean m_IsScanning;
+    private int m_Timeout;
 
     private Context m_Context;
 
@@ -113,6 +114,7 @@ public class ConnectionManager extends Service
         private BluetoothDevice m_Device;
         private BluetoothGatt m_Gatt;
         private int m_ConnectionState;
+        private boolean m_IsConnectable;
         private boolean m_IsConnecting;
         private boolean m_DiscoverServicesWhenConnected;
         private boolean m_ReadCharacteristicsWhenDiscovered;
@@ -526,9 +528,10 @@ public class ConnectionManager extends Service
 
         private Device() { }
 
-        public Device(BluetoothDevice bluetoothDevice)
+        public Device(BluetoothDevice bluetoothDevice, boolean isConnectable)
         {
             m_ConnectionState = STATE_DISCONNECTED;
+            m_IsConnectable = isConnectable;
             m_IsConnecting = false;
 
             m_Device = bluetoothDevice;
@@ -545,7 +548,7 @@ public class ConnectionManager extends Service
 
         public void Connect()
         {
-            if (IsConnected() || IsConnecting()) return;
+            if (IsConnected() || IsConnecting() || !IsConnectable()) return;
 
             QueueGattAction(new GattConnect());
         }
@@ -664,6 +667,11 @@ public class ConnectionManager extends Service
         public boolean IsConnected()
         {
             return m_ConnectionState == STATE_CONNECTED;
+        }
+
+        public boolean IsConnectable()
+        {
+            return m_IsConnectable;
         }
 
         public boolean IsConnecting()
@@ -912,23 +920,20 @@ public class ConnectionManager extends Service
         @Override
         public void onScanResult(int callbackType, ScanResult result)
         {
-            if (result.isConnectable())
-            {
-                BluetoothDevice bluetoothDevice = result.getDevice();
+            BluetoothDevice bluetoothDevice = result.getDevice();
 
-                // Device already found, skip.
-                if (m_Devices.containsKey(bluetoothDevice.getAddress())) return;
+            // Device already found, skip.
+            if (m_Devices.containsKey(bluetoothDevice.getAddress())) return;
 
-                Device device = new Device(bluetoothDevice);
-                String deviceName = device.GetName();
-                String deviceAddress = device.GetAddress();
-                m_Devices.put(deviceAddress, device);
-                m_ScannedDevices.add(deviceAddress);
+            Device device = new Device(bluetoothDevice, result.isConnectable());
+            String deviceName = device.GetName();
+            String deviceAddress = device.GetAddress();
+            m_Devices.put(deviceAddress, device);
+            m_ScannedDevices.add(deviceAddress);
 
-                BroadcastOnDeviceScanned(deviceName, deviceAddress);
+            BroadcastOnDeviceScanned(deviceName, deviceAddress);
 
-                Logger.Debug(TAG, "Connectable Device Found: " + deviceAddress + (deviceName != deviceAddress ? " - " + deviceName : ""));
-            }
+            Logger.Debug(TAG, "Connectable Device Found: " + deviceAddress + (deviceName != deviceAddress ? " - " + deviceName : ""));
         }
     };
 
@@ -981,8 +986,14 @@ public class ConnectionManager extends Service
         return m_Devices.get(address);
     }
 
-    // Scan for Bluetooth LE devices.
+
     public void Scan(boolean stopScan)
+    {
+        Scan(stopScan, SCAN_TIMEOUT);
+    }
+
+    // Scan for Bluetooth LE devices.
+    public void Scan(boolean stopScan, int timeout)
     {
         if (!Initialize()) return;
 
@@ -1041,7 +1052,7 @@ public class ConnectionManager extends Service
 
                 BroadcastScanStopped();
             }
-        }, SCAN_TIMEOUT);
+        }, timeout);
 
         m_IsScanning = true;
     }
@@ -1076,6 +1087,7 @@ public class ConnectionManager extends Service
         if (!Initialize()) return;
         if (device == null) return;
         if (device.IsConnected() || device.IsConnecting()) return;
+        if (!device.IsConnectable()) return;
 
         Logger.Debug(TAG, "ConnectDevice");
         // Clear gatt queue in case there are some unprocessed events

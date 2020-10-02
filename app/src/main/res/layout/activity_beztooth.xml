@@ -56,5 +56,18 @@
             android:textColor="@color/BezBlue"
             android:textSize="36sp"
             android:textStyle="bold" />
+        <com.beztooth.UI.Util.BezButton
+            android:id="@+id/garageDoorButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:padding="25dp"
+            android:background="@drawable/select_border"
+            android:text="@string/garagedoor"
+            android:textColor="@color/BezBlue"
+            android:textSize="36sp"
+            android:textStyle="bold" />
     </LinearLayout>
 </LinearLayout>
