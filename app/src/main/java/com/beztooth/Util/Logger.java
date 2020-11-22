@@ -7,9 +7,9 @@ import java.util.LinkedList;
 
 public class Logger
 {
-    public static final boolean DEBUG = true;
-    public static final boolean LOG_THREAD_ID = DEBUG && true;
-    public static final boolean USE_STDIO = DEBUG && false;
+    private static final boolean DEBUG = true;
+    private static final boolean LOG_THREAD_ID = DEBUG && true;
+    private static final boolean USE_STDIO = DEBUG && false;
 
     private static final String TAG = "bezlog";
 

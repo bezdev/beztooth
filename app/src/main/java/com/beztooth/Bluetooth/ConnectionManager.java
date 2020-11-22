@@ -142,9 +142,9 @@ public class ConnectionManager extends Service
                     @Override
                     public void run()
                     {
-                        Log("Try timeout: " + Util.GetCallerName() + " " + m_Type);
+                        Log("Timeout: " + Util.GetCallerName() + " " + m_Type);
                         GattAction removed = DequeueGattAction(m_Type);
-                        Log("Gatt timeout: " + GetGattAction(removed.getClass().toString()));
+                        if (removed != null) Log("Gatt timeout: " + GetGattAction(removed.getClass().toString()));
                         OnTimeout();
                     }
                 };
@@ -408,7 +408,7 @@ public class ConnectionManager extends Service
             public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
                 m_Gatt = gatt;
 
-                Log("onCharacteristicRead: " + characteristic.getUuid() + " - " + characteristic.getValue().length + " byte(s)");
+                Log("onCharacteristicRead: " + characteristic.getUuid() + " - " + (characteristic.getValue() == null ? "null" : (characteristic.getValue().length + " byte(s)")));
 
                 BroadcastOnCharacteristicRead(
                     characteristic.getService().getUuid().toString(),
@@ -733,10 +733,11 @@ public class ConnectionManager extends Service
 
                 Log("DequeueGattAction (" + type + ") " + Util.GetCallerName() + " (" + m_GattActionQueue.size() + " items in queue) - completed: " + (m_GattActionQueue.size() == 0 ? "null" : GetGattAction(peek.getClass().toString())));
 
-                if (m_GattActionQueue.size() == 0) return null;
-
-                // Only remove completed event if the event was the one that actually completed.
-                if (peek.GetType() != type) return null;
+                // If the queue is empty or the action doesn't match the queue, then a timeout likely happened.
+                if (m_GattActionQueue.size() == 0 || peek.GetType() != type)
+                {
+                    return null;
+                }
 
                 completed = m_GattActionQueue.remove();
                 completed.Done();
@@ -767,7 +768,7 @@ public class ConnectionManager extends Service
 
         private void BroadcastOnCharacteristicRead(String service, String uuid, byte[] value)
         {
-            if (value.length == 0) return;
+            if (value == null || value.length == 0) return;
 
             Intent intent = new Intent(ON_CHARACTERISTIC_READ);
             intent.putExtra(ADDRESS, m_Address);
