@@ -193,19 +193,16 @@ public class ThermometerActivity extends BluetoothActivity
 
         switch (item.getItemId()) {
             case R.id.menu_sync_time:
-                BluetoothGattCharacteristic c = m_Device.GetCharacteristic(Constants.AddBaseUUID(Constants.SERVICE_CURRENT_TIME.UUID), Constants.AddBaseUUID(Constants.CHARACTERISTIC_CURRENT_TIME.UUID));
-                if (c == null) return true;
-                c.setValue(Util.GetTimeInBytes(System.currentTimeMillis()));
-                m_Device.WriteCharacteristic(c);
-                m_Device.ReadCharacteristic(c);
+                m_Device.WriteCharacteristic(Constants.AddBaseUUID(Constants.SERVICE_CURRENT_TIME.UUID), Constants.AddBaseUUID(Constants.CHARACTERISTIC_CURRENT_TIME.UUID), Util.GetTimeInBytes(System.currentTimeMillis()));
+                m_Device.ReadCharacteristic(Constants.AddBaseUUID(Constants.SERVICE_CURRENT_TIME.UUID), Constants.AddBaseUUID(Constants.CHARACTERISTIC_CURRENT_TIME.UUID));
                 return true;
             case R.id.menu_live_time:
                 item.setChecked(!item.isChecked());
-                m_Device.SetCharacteristicNotification(m_Device.GetCharacteristic(Constants.AddBaseUUID(Constants.SERVICE_CURRENT_TIME.UUID), Constants.AddBaseUUID(Constants.CHARACTERISTIC_CURRENT_TIME.UUID)), item.isChecked());
+                m_Device.SetCharacteristicNotification(Constants.AddBaseUUID(Constants.SERVICE_CURRENT_TIME.UUID), Constants.AddBaseUUID(Constants.CHARACTERISTIC_CURRENT_TIME.UUID), item.isChecked());
                 return true;
             case R.id.menu_live_sensors:
                 item.setChecked(!item.isChecked());
-                m_Device.SetCharacteristicNotification(m_Device.GetCharacteristic(Constants.AddBaseUUID(Constants.SERVICE_ENVIRONMENTAL_SENSING.UUID), Constants.LEO_SERVER_V2_ALL_SENSOR_DATA.UUID), item.isChecked());
+                m_Device.SetCharacteristicNotification(Constants.AddBaseUUID(Constants.SERVICE_ENVIRONMENTAL_SENSING.UUID), Constants.LEO_SERVER_V2_ALL_SENSOR_DATA.UUID, item.isChecked());
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

@@ -1,7 +1,6 @@
 package com.beztooth.UI.Activities;
 
 import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -18,6 +17,8 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.beztooth.Bluetooth.BluetoothCharacteristic;
+import com.beztooth.Bluetooth.BluetoothService;
 import com.beztooth.Bluetooth.ConnectionManager;
 import com.beztooth.R;
 import com.beztooth.UI.Util.BezButton;
@@ -133,7 +134,7 @@ public class DeviceActivity extends BluetoothActivity
 
         if (!m_Device.IsConnected())
         {
-            m_ConnectionManager.ConnectDevice(m_Device);
+            m_Device.Connect();
         }
         else
         {
@@ -153,7 +154,7 @@ public class DeviceActivity extends BluetoothActivity
         {
             public void onClick(View v)
             {
-                m_ConnectionManager.DisconnectDevice(m_Device);
+                m_Device.Disconnect();
                 finish();
             }
         });
@@ -161,13 +162,13 @@ public class DeviceActivity extends BluetoothActivity
 
     private void ShowServices()
     {
-        for (BluetoothGattService s : m_Device.GetServices())
+        for (BluetoothService s : m_Device.GetServices())
         {
-            AddServiceSelect(s.getUuid().toString(), s.getCharacteristics());
+            AddServiceSelect(s.GetUUID(), s.GetCharacteristics());
         }
     }
 
-    private void AddServiceSelect(String serviceUUID, List<BluetoothGattCharacteristic> characteristics)
+    private void AddServiceSelect(String serviceUUID, List<BluetoothCharacteristic> characteristics)
     {
         String serviceName = Constants.Services.Get(m_Address, serviceUUID);
 
@@ -190,9 +191,9 @@ public class DeviceActivity extends BluetoothActivity
         //v.setClickable(true);
         //v.setOnClickListener();
 
-        for (BluetoothGattCharacteristic c : characteristics)
+        for (BluetoothCharacteristic c : characteristics)
         {
-            AddCharacteristicView(serviceUUID, c.getUuid().toString(), serviceView);
+            AddCharacteristicView(serviceUUID, c.GetUUID(), serviceView);
         }
 
         LinearLayout insertPoint = findViewById(R.id.service_scroll);
@@ -348,17 +349,14 @@ public class DeviceActivity extends BluetoothActivity
             int action = Integer.parseInt(view.getTag().toString());
             if (action == BluetoothGattCharacteristic.PROPERTY_READ)
             {
-                m_Device.ReadCharacteristic(m_Device.GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID));
+                m_Device.ReadCharacteristic(m_ServiceUUID, m_CharacteristicUUID);
             }
             else if (action == BluetoothGattCharacteristic.PROPERTY_WRITE)
             {
                 // TODO: only sync time is supported for now - add ability to write custom data
                 if (m_ServiceUUID.contains("1805") && m_CharacteristicUUID.contains("2a2b")) {
-                    BluetoothGattCharacteristic c = m_Device.GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID);
-                    if (c == null) return;
-                    c.setValue(Util.GetTimeInBytes(System.currentTimeMillis()));
-                    m_Device.WriteCharacteristic(c);
-                    m_Device.ReadCharacteristic(c);
+                    m_Device.WriteCharacteristic(m_ServiceUUID, m_CharacteristicUUID, Util.GetTimeInBytes(System.currentTimeMillis()));
+                    m_Device.ReadCharacteristic(m_ServiceUUID, m_CharacteristicUUID);
                 }
             }
             else if (action == BluetoothGattCharacteristic.PROPERTY_NOTIFY)
@@ -374,7 +372,7 @@ public class DeviceActivity extends BluetoothActivity
                     view.setBackgroundResource(R.drawable.select_border_medium);
                 }
 
-                m_Device.SetCharacteristicNotification(m_Device.GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID), m_IsNotifyEnabled || m_IsNotifyEnabled);
+                m_Device.SetCharacteristicNotification(m_ServiceUUID, m_CharacteristicUUID, m_IsNotifyEnabled || m_IsNotifyEnabled);
             }
             else if (action == BluetoothGattCharacteristic.PROPERTY_INDICATE)
             {
@@ -389,7 +387,7 @@ public class DeviceActivity extends BluetoothActivity
                     view.setBackgroundResource(R.drawable.select_border_medium);
                 }
 
-                m_Device.SetCharacteristicIndication(m_Device.GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID), m_IsNotifyEnabled || m_IsIndicateEnabled);
+                m_Device.SetCharacteristicIndication(m_ServiceUUID, m_CharacteristicUUID, m_IsNotifyEnabled || m_IsIndicateEnabled);
             }
         }
     };

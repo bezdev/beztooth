@@ -66,7 +66,6 @@ public class ConnectionManager extends Service
     private static final int SCAN_TIMEOUT = 10000;
     private static final int CONNECT_DEVICE_TIMEOUT = 10000;
     private static final int GATT_TIMEOUT = 5000;
-    private static final boolean AUTO_READ_DESCRIPTOR = false;
 
     private Handler m_ScanHandler;
     private BluetoothAdapter m_BluetoothAdapter;
@@ -93,6 +92,15 @@ public class ConnectionManager extends Service
         WriteDescriptor
     };
 
+    private enum WriteDescriptorOptions
+    {
+        None,
+        EnableNotification,
+        DisableNotification,
+        EnableInidication,
+        DisableIndication
+    }
+
     // Used to queue Gatt actions since a Device will only handle one request at a time.
     private interface IGattAction
     {
@@ -117,14 +125,23 @@ public class ConnectionManager extends Service
         private boolean m_DiscoverServicesWhenConnected;
         private boolean m_ReadCharacteristicsWhenDiscovered;
         private Handler m_GattTimeoutHandler;
+        private DeviceShadow m_DeviceShadow;
 
         private long m_ConnectTime;
         private long m_OnConnectedTime;
 
         // Queue of GattActions.  A device can only handle one request at a time, but from the UI
         // we might fire off several actions at once.  Need to dequeue after performing every action.
-        private Lock m_GattActionQueueLock;
         private LinkedList<GattAction> m_GattActionQueue;
+        private Lock m_GattLock;
+
+        private class GattActionException extends RuntimeException
+        {
+            public GattActionException(String message)
+            {
+                super(message);
+            }
+        }
 
         private class GattAction implements IGattAction
         {
@@ -175,57 +192,6 @@ public class ConnectionManager extends Service
             }
         }
 
-        private class GattDiscoverServices extends GattAction
-        {
-            public GattDiscoverServices()
-            {
-                super(GattActionType.DiscoverServices);
-            }
-
-            @Override
-            public void Do()
-            {
-                super.Do();
-                m_Gatt.discoverServices();
-            }
-        }
-
-        private class GattReadCharacteristic extends GattAction
-        {
-            private BluetoothGattCharacteristic m_Characteristic;
-
-            public GattReadCharacteristic(BluetoothGattCharacteristic characteristic)
-            {
-                super(GattActionType.ReadCharacteristic);
-                m_Characteristic = characteristic;
-            }
-
-            @Override
-            public void Do()
-            {
-                super.Do();
-                m_Gatt.readCharacteristic(m_Characteristic);
-            }
-        }
-
-        private class GattWriteCharacteristic extends GattAction
-        {
-            private BluetoothGattCharacteristic m_Characteristic;
-
-            public GattWriteCharacteristic(BluetoothGattCharacteristic characteristic)
-            {
-                super(GattActionType.WriteCharacteristic);
-                m_Characteristic = characteristic;
-            }
-
-            @Override
-            public void Do()
-            {
-                super.Do();
-                m_Gatt.writeCharacteristic(m_Characteristic);
-            }
-        }
-
         private class GattConnect extends GattAction
         {
             public GattConnect()
@@ -237,9 +203,9 @@ public class ConnectionManager extends Service
             @Override
             public void Do()
             {
-                super.Do();
-
                 if (IsConnected() || IsConnecting()) return;
+
+                super.Do();
 
                 m_ConnectTime = System.currentTimeMillis();
                 m_Gatt = m_Device.connectGatt(m_Context, true, c_BluetoothGattCallback);
@@ -264,7 +230,10 @@ public class ConnectionManager extends Service
             @Override
             public void Do()
             {
+                if (!IsConnected()) return;
+
                 super.Do();
+
                 m_Gatt.disconnect();
                 QueueGattAction(new GattClose());
             }
@@ -281,43 +250,166 @@ public class ConnectionManager extends Service
             public void Do()
             {
                 super.Do();
+
                 m_Gatt.close();
+            }
+        }
+
+        private class GattDiscoverServices extends GattAction
+        {
+            public GattDiscoverServices()
+            {
+                super(GattActionType.DiscoverServices);
+            }
+
+            @Override
+            public void Do()
+            {
+                if (!IsConnected()) return;
+
+                super.Do();
+
+                m_Gatt.discoverServices();
+            }
+        }
+
+        private class GattReadCharacteristic extends GattAction
+        {
+            private String m_ServiceUUID;
+            private String m_CharacteristicUUID;
+
+            public GattReadCharacteristic(String serviceUUID, String characteristicUUID)
+            {
+                super(GattActionType.ReadCharacteristic);
+                m_ServiceUUID = serviceUUID;
+                m_CharacteristicUUID = characteristicUUID;
+            }
+
+            @Override
+            public void Do()
+            {
+                if (!IsConnected()) return;
+
+                super.Do();
+
+                BluetoothGattCharacteristic characteristic = GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID);
+                if (characteristic == null) throw new GattActionException("GattReadCharacteristic failed.");
+                m_Gatt.readCharacteristic(characteristic);
+            }
+        }
+
+        private class GattWriteCharacteristic extends GattAction
+        {
+            private String m_ServiceUUID;
+            private String m_CharacteristicUUID;
+            private byte[] m_Data;
+
+            public GattWriteCharacteristic(String serviceUUID, String characteristicUUID, byte[] data)
+            {
+                super(GattActionType.WriteCharacteristic);
+                m_ServiceUUID = serviceUUID;
+                m_CharacteristicUUID = characteristicUUID;
+                m_Data = data;
+            }
+
+            @Override
+            public void Do()
+            {
+                if (!IsConnected()) return;
+
+                super.Do();
+
+                BluetoothGattCharacteristic characteristic = GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID);
+                if (characteristic == null) throw new GattActionException("GattWriteCharacteristic failed.");
+                characteristic.setValue(m_Data);
+                m_Gatt.writeCharacteristic(characteristic);
             }
         }
 
         private class GattReadDescriptor extends GattAction
         {
-            private BluetoothGattDescriptor m_Descriptor;
+            private String m_ServiceUUID;
+            private String m_CharacteristicUUID;
+            private String m_DescriptorUUID;
 
-            public GattReadDescriptor(BluetoothGattDescriptor descriptor)
+            public GattReadDescriptor(String serviceUUID, String characteristicUUID, String descriptorUUID)
             {
                 super(GattActionType.ReadDescriptor);
-                m_Descriptor = descriptor;
+                m_ServiceUUID = serviceUUID;
+                m_CharacteristicUUID = characteristicUUID;
+                m_DescriptorUUID = descriptorUUID;
             }
 
             @Override
             public void Do()
             {
+                if (!IsConnected()) return;
+
                 super.Do();
-                m_Gatt.readDescriptor(m_Descriptor);
+
+                BluetoothGattDescriptor descriptor = GetDescriptor(m_ServiceUUID, m_CharacteristicUUID, m_DescriptorUUID);
+                if (descriptor == null) throw new GattActionException("GattReadDescriptor failed.");
+                m_Gatt.readDescriptor(descriptor);
             }
         }
 
         private class GattWriteDescriptor extends GattAction
         {
-            private BluetoothGattDescriptor m_Descriptor;
+            private String m_ServiceUUID;
+            private String m_CharacteristicUUID;
+            private String m_DescriptorUUID;
+            private byte[] m_Data;
+            private WriteDescriptorOptions m_Options;
 
-            public GattWriteDescriptor(BluetoothGattDescriptor descriptor)
+            public GattWriteDescriptor(String serviceUUID, String characteristicUUID, String descriptorUUID, byte[] data, WriteDescriptorOptions options)
             {
                 super(GattActionType.WriteDescriptor);
-                m_Descriptor = descriptor;
+                m_ServiceUUID = serviceUUID;
+                m_CharacteristicUUID = characteristicUUID;
+                m_DescriptorUUID = descriptorUUID;
+                m_Data = data;
+                m_Options = options;
             }
 
             @Override
             public void Do()
             {
+                if (!IsConnected()) return;
+
                 super.Do();
-                m_Gatt.writeDescriptor(m_Descriptor);
+
+                BluetoothGattDescriptor d = GetDescriptor(m_ServiceUUID, m_CharacteristicUUID, m_DescriptorUUID);
+                if (d == null) throw new GattActionException("GattReadDescriptor failed.");
+
+                if (m_Options != WriteDescriptorOptions.None)
+                {
+                    BluetoothGattCharacteristic c = GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID);
+                    if (c == null) throw new GattActionException("GattReadDescriptor failed.");
+
+                    if (m_Options == WriteDescriptorOptions.EnableInidication)
+                    {
+                        if ((c.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) != BluetoothGattCharacteristic.PROPERTY_INDICATE) throw new GattActionException("GattReadDescriptor failed.");;
+                        m_Gatt.setCharacteristicNotification(c, true);
+                    }
+                    else if (m_Options == WriteDescriptorOptions.DisableIndication)
+                    {
+                        if ((c.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) != BluetoothGattCharacteristic.PROPERTY_INDICATE) throw new GattActionException("GattReadDescriptor failed.");;
+                        m_Gatt.setCharacteristicNotification(c, false);
+                    }
+                    else if (m_Options == WriteDescriptorOptions.EnableNotification)
+                    {
+                        if ((c.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != BluetoothGattCharacteristic.PROPERTY_NOTIFY) throw new GattActionException("GattReadDescriptor failed.");;
+                        m_Gatt.setCharacteristicNotification(c, true);
+                    }
+                    else if (m_Options == WriteDescriptorOptions.DisableNotification)
+                    {
+                        if ((c.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != BluetoothGattCharacteristic.PROPERTY_NOTIFY) throw new GattActionException("GattReadDescriptor failed.");;
+                        m_Gatt.setCharacteristicNotification(c, false);
+                    }
+                }
+
+                d.setValue(m_Data);
+                m_Gatt.writeDescriptor(d);
             }
         }
 
@@ -327,6 +419,8 @@ public class ConnectionManager extends Service
             @Override
             public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState)
             {
+                UpdateGatt(gatt);
+
                 m_IsConnecting = false;
 
                 if (newState == STATE_CONNECTED)
@@ -367,33 +461,27 @@ public class ConnectionManager extends Service
             @Override
             public void onServicesDiscovered(BluetoothGatt gatt, int status)
             {
+                m_GattLock.lock();
+
                 m_Gatt = gatt;
+                m_DeviceShadow.SetServices(gatt.getServices());
+                LinkedList<BluetoothService> services = m_DeviceShadow.GetServices();
+                Log("OnServicesDiscovered (" + services.size() + "): " + m_Address);
 
-                Log("OnServicesDiscovered (" + gatt.getServices().size() + "): " + m_Address);
+                m_GattLock.unlock();
 
-                for (BluetoothGattService s : gatt.getServices())
+                for (BluetoothService s : services)
                 {
-                    Log("Service: " + s.getUuid());
-                    for (BluetoothGattCharacteristic c : s.getCharacteristics())
+                    Log("Service: " + s.GetUUID());
+                    for (BluetoothCharacteristic c : s.GetCharacteristics())
                     {
-                        Log(" Characteristic (properties: " + c.getProperties() + "): " + c.getUuid());
+                        Log(" Characteristic (properties: " + c.GetProperties() + "): " + c.GetUUID());
 
                         if (m_ReadCharacteristicsWhenDiscovered)
                         {
-                            if (AUTO_READ_DESCRIPTOR)
+                            if ((c.GetProperties() & BluetoothGattCharacteristic.PROPERTY_READ) == BluetoothGattCharacteristic.PROPERTY_READ)
                             {
-                                for (BluetoothGattDescriptor d : c.getDescriptors())
-                                {
-                                    if ((d.getPermissions() & BluetoothGattDescriptor.PERMISSION_READ) == BluetoothGattDescriptor.PERMISSION_READ)
-                                    {
-                                        ReadDescriptor(d);
-                                    }
-                                }
-                            }
-
-                            if ((c.getProperties() & BluetoothGattCharacteristic.PROPERTY_READ) == BluetoothGattCharacteristic.PROPERTY_READ)
-                            {
-                                ReadCharacteristic(c);
+                                ReadCharacteristic(s.GetUUID(), c.GetUUID());
                             }
                         }
                     }
@@ -405,15 +493,19 @@ public class ConnectionManager extends Service
             }
 
             @Override
-            public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-                m_Gatt = gatt;
+            public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status)
+            {
+                UpdateGatt(gatt);
 
                 Log("onCharacteristicRead: " + characteristic.getUuid() + " - " + (characteristic.getValue() == null ? "null" : (characteristic.getValue().length + " byte(s)")));
 
-                BroadcastOnCharacteristicRead(
-                    characteristic.getService().getUuid().toString(),
-                    characteristic.getUuid().toString(),
-                    characteristic.getValue());
+                String serviceUUID = characteristic.getService().getUuid().toString();
+                String characteristicUUID = characteristic.getUuid().toString();
+                byte[] value = characteristic.getValue();
+
+                m_DeviceShadow.UpdateCharacteristic(serviceUUID, characteristicUUID, value);
+
+                BroadcastOnCharacteristicRead(serviceUUID, characteristicUUID, value);
 
                 DequeueGattAction(GattActionType.ReadCharacteristic);
             }
@@ -421,14 +513,17 @@ public class ConnectionManager extends Service
             @Override
             public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status)
             {
-                m_Gatt = gatt;
+                UpdateGatt(gatt);
 
                 Log("onCharacteristicWrite");
 
-                BroadcastOnCharacteristicWrite(
-                        characteristic.getService().getUuid().toString(),
-                        characteristic.getUuid().toString(),
-                        characteristic.getValue());
+                String serviceUUID = characteristic.getService().getUuid().toString();
+                String characteristicUUID = characteristic.getUuid().toString();
+                byte[] value = characteristic.getValue();
+
+                m_DeviceShadow.UpdateCharacteristic(serviceUUID, characteristicUUID, value);
+
+                BroadcastOnCharacteristicWrite(serviceUUID, characteristicUUID, value);
 
                 DequeueGattAction(GattActionType.WriteCharacteristic);
             }
@@ -436,14 +531,17 @@ public class ConnectionManager extends Service
             @Override
             public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic)
             {
-                m_Gatt = gatt;
+                UpdateGatt(gatt);
 
                 Log("onCharacteristicChanged");
 
-                BroadcastOnCharacteristicRead(
-                        characteristic.getService().getUuid().toString(),
-                        characteristic.getUuid().toString(),
-                        characteristic.getValue());
+                String serviceUUID = characteristic.getService().getUuid().toString();
+                String characteristicUUID = characteristic.getUuid().toString();
+                byte[] value = characteristic.getValue();
+
+                m_DeviceShadow.UpdateCharacteristic(serviceUUID, characteristicUUID, value);
+
+                BroadcastOnCharacteristicRead(serviceUUID, characteristicUUID, value);
 
                 DequeueGattAction(GattActionType.None);
             }
@@ -451,7 +549,7 @@ public class ConnectionManager extends Service
             @Override
             public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status)
             {
-                m_Gatt = gatt;
+                UpdateGatt(gatt);
 
                 Log("onDescriptorRead: (c: " + descriptor.getCharacteristic().getUuid().toString() + "): " + descriptor.getValue().length + " byte(s): " + new String(descriptor.getValue()));
 
@@ -468,7 +566,7 @@ public class ConnectionManager extends Service
             {
                 Log("onDescriptorWrite");
 
-                m_Gatt = gatt;
+                UpdateGatt(gatt);
 
                 DequeueGattAction(GattActionType.WriteDescriptor);
             }
@@ -478,7 +576,7 @@ public class ConnectionManager extends Service
             {
                 Log("onMtuChanged");
 
-                m_Gatt = gatt;
+                UpdateGatt(gatt);
 
                 DequeueGattAction(GattActionType.None);
             }
@@ -488,7 +586,7 @@ public class ConnectionManager extends Service
             {
                 Log("onPhyRead");
 
-                m_Gatt = gatt;
+                UpdateGatt(gatt);
 
                 DequeueGattAction(GattActionType.None);
             }
@@ -498,7 +596,7 @@ public class ConnectionManager extends Service
             {
                 Log("onPhyUpdate");
 
-                m_Gatt = gatt;
+                UpdateGatt(gatt);
 
                 DequeueGattAction(GattActionType.None);
             }
@@ -508,7 +606,7 @@ public class ConnectionManager extends Service
             {
                 Log("onReadRemoteRssi");
 
-                m_Gatt = gatt;
+                UpdateGatt(gatt);
 
                 DequeueGattAction(GattActionType.None);
             }
@@ -518,7 +616,7 @@ public class ConnectionManager extends Service
             {
                 Log("onReliableWriteCompleted");
 
-                m_Gatt = gatt;
+                UpdateGatt(gatt);
 
                 DequeueGattAction(GattActionType.None);
             }
@@ -535,11 +633,12 @@ public class ConnectionManager extends Service
             m_Name = (bluetoothDevice.getName() == null) ? bluetoothDevice.getAddress() : bluetoothDevice.getName();
             m_Address = bluetoothDevice.getAddress();
             m_GattTimeoutHandler = new Handler();
+            m_DeviceShadow = new DeviceShadow();
 
             m_DiscoverServicesWhenConnected = true;
             m_ReadCharacteristicsWhenDiscovered = true;
 
-            m_GattActionQueueLock = new ReentrantLock();
+            m_GattLock = new ReentrantLock();
             m_GattActionQueue = new LinkedList<>();
         }
 
@@ -547,53 +646,57 @@ public class ConnectionManager extends Service
         {
             if (IsConnected() || IsConnecting()) return;
 
+            ClearGattActionQueue();
             QueueGattAction(new GattConnect());
         }
 
         public void Disconnect()
         {
-            if (!IsConnected()) return;
-
             QueueGattAction(new GattDisconnect());
         }
 
         public void DiscoverServices()
         {
-            if (!IsConnected()) return;
-
             QueueGattAction(new GattDiscoverServices());
         }
 
-        public void ReadCharacteristic(BluetoothGattCharacteristic characteristic)
+        public void ReadCharacteristic(String serviceUUID, String characteristicUUID)
         {
-            if (!IsConnected()) return;
-
-            if (characteristic == null) return;
-
-            QueueGattAction(new GattReadCharacteristic(characteristic));
+            QueueGattAction(new GattReadCharacteristic(serviceUUID, characteristicUUID));
         }
 
-        public void WriteCharacteristic(BluetoothGattCharacteristic characteristic)
+        public void WriteCharacteristic(String serviceUUID, String characteristicUUID, byte[] data)
         {
-            if (!IsConnected()) return;
-
-            if (characteristic == null) return;
-
-            QueueGattAction(new GattWriteCharacteristic(characteristic));
+            QueueGattAction(new GattWriteCharacteristic(serviceUUID, characteristicUUID, data));
         }
 
-        public void ReadDescriptor(BluetoothGattDescriptor descriptor)
+        public void ReadDescriptor(String serviceUUID, String characteristicUUID, String descriptorUUID)
         {
-            if (!IsConnected()) return;
-
-            QueueGattAction(new GattReadDescriptor(descriptor));
+            QueueGattAction(new GattReadDescriptor(serviceUUID, characteristicUUID, descriptorUUID));
         }
 
-        public void WriteDescriptor(BluetoothGattDescriptor descriptor)
+        public void WriteDescriptor(String serviceUUID, String characteristicUUID, String descriptorUUID, byte[] data)
         {
-            if (!IsConnected()) return;
+            QueueGattAction(new GattWriteDescriptor(serviceUUID, characteristicUUID, descriptorUUID, data, WriteDescriptorOptions.None));
+        }
 
-            QueueGattAction(new GattWriteDescriptor(descriptor));
+        public void SetCharacteristicIndication(String serviceUUID, String characteristicUUID, boolean enable)
+        {
+            byte[] data = enable ? BluetoothGattDescriptor.ENABLE_INDICATION_VALUE : new byte[] { 0x00, 0x00 };
+            WriteDescriptorOptions options = enable ? WriteDescriptorOptions.EnableInidication : WriteDescriptorOptions.DisableIndication;
+            QueueGattAction(new GattWriteDescriptor(serviceUUID, characteristicUUID, Constants.DESCRIPTOR_CLIENT_CHARACTERISTIC_CONFIGURATION.GetFullUUID(), data, options));
+        }
+
+        public void SetCharacteristicNotification(String serviceUUID, String characteristicUUID, boolean enable)
+        {
+            byte[] data = enable ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : new byte[] { 0x00, 0x00 };
+            WriteDescriptorOptions options = enable ? WriteDescriptorOptions.EnableNotification : WriteDescriptorOptions.DisableNotification;
+            QueueGattAction(new GattWriteDescriptor(serviceUUID, characteristicUUID, Constants.DESCRIPTOR_CLIENT_CHARACTERISTIC_CONFIGURATION.GetFullUUID(), data, options));
+        }
+
+        public void SetReadCharacteristicsWhenDiscovered(boolean readCharacteristicsWhenDiscovered)
+        {
+            m_ReadCharacteristicsWhenDiscovered = readCharacteristicsWhenDiscovered;
         }
 
         private BluetoothGattService GetService(String service)
@@ -603,7 +706,7 @@ public class ConnectionManager extends Service
             return m_Gatt.getService(UUID.fromString(service));
         }
 
-        public BluetoothGattCharacteristic GetCharacteristic(String serviceUUID, String characteristicUUID)
+        private BluetoothGattCharacteristic GetCharacteristic(String serviceUUID, String characteristicUUID)
         {
             if (!IsConnected()) return null;
 
@@ -612,53 +715,13 @@ public class ConnectionManager extends Service
             return s.getCharacteristic(UUID.fromString(characteristicUUID));
         }
 
-        public int GetCharacteristicProperties(String serviceUUID, String characteristicUUID)
+        private BluetoothGattDescriptor GetDescriptor(String serviceUUID, String characteristicUUID, String descriptorUUID)
         {
+            if (!IsConnected()) return null;
+
             BluetoothGattCharacteristic c = GetCharacteristic(serviceUUID, characteristicUUID);
-            if (c == null) return 0;
-
-            return c.getProperties();
-        }
-
-        public void SetCharacteristicNotification(BluetoothGattCharacteristic characteristic, boolean enable)
-        {
-            if (!IsConnected()) return;
-            if (characteristic == null) return;
-            if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != BluetoothGattCharacteristic.PROPERTY_NOTIFY) return;
-
-            // Get Client Characteristic Configuration descriptor
-            BluetoothGattDescriptor d = characteristic.getDescriptor(UUID.fromString(Constants.DESCRIPTOR_CLIENT_CHARACTERISTIC_CONFIGURATION.GetFullUUID()));
-            if (d == null) return;
-
-            // Enable notify on client
-            m_Gatt.setCharacteristicNotification(characteristic, enable);
-
-            // Enable notify on server
-            d.setValue(enable ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : new byte[] { 0x00, 0x00 });
-            WriteDescriptor(d);
-        }
-
-        public void SetCharacteristicIndication(BluetoothGattCharacteristic characteristic, boolean enable)
-        {
-            if (!IsConnected()) return;
-            if (characteristic == null) return;
-            if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) != BluetoothGattCharacteristic.PROPERTY_INDICATE) return;
-
-            // Get Client Characteristic Configuration descriptor
-            BluetoothGattDescriptor d = characteristic.getDescriptor(UUID.fromString(Constants.DESCRIPTOR_CLIENT_CHARACTERISTIC_CONFIGURATION.GetFullUUID()));
-            if (d == null) return;
-
-            // Enable notify on client
-            m_Gatt.setCharacteristicNotification(characteristic, enable);
-
-            // Enable notify on server
-            d.setValue(enable ? BluetoothGattDescriptor.ENABLE_INDICATION_VALUE : new byte[] { 0x00, 0x00 });
-            WriteDescriptor(d);
-        }
-
-        public void SetReadCharacteristicsWhenDiscovered(boolean readCharacteristicsWhenDiscovered)
-        {
-            m_ReadCharacteristicsWhenDiscovered = readCharacteristicsWhenDiscovered;
+            if (c == null) return null;
+            return c.getDescriptor(UUID.fromString(descriptorUUID));
         }
 
         public boolean IsConnected()
@@ -681,19 +744,22 @@ public class ConnectionManager extends Service
             return m_Address;
         }
 
-        public BluetoothDevice GetDevice()
+        public List<BluetoothService> GetServices()
         {
-            return m_Device;
+            return m_DeviceShadow.GetServices();
         }
 
-        public List<BluetoothGattService> GetServices()
+        public int GetCharacteristicProperties(String serviceUUID, String characteristicUUID)
         {
-            return m_Gatt.getServices();
+            BluetoothCharacteristic c = m_DeviceShadow.GetCharacteristic(serviceUUID, characteristicUUID);
+            if (c == null) return 0;
+
+            return c.GetProperties();
         }
 
-        public void ClearGattActionQueue()
+        private void ClearGattActionQueue()
         {
-            m_GattActionQueueLock.lock();
+            m_GattLock.lock();
 
             for (GattAction ga : m_GattActionQueue)
             {
@@ -702,28 +768,37 @@ public class ConnectionManager extends Service
 
             m_GattActionQueue.clear();
 
-            m_GattActionQueueLock.unlock();
+            m_GattLock.unlock();
         }
 
         private void QueueGattAction(GattAction action)
         {
-            m_GattActionQueueLock.lock();
+            m_GattLock.lock();
 
             Log("QueueGattAction " + Util.GetCallerName() + " (" + m_GattActionQueue.size() + " items in queue): " + GetGattAction(action.getClass().toString()));
 
             m_GattActionQueue.add(action);
 
             // If this is the only queued action, dequeue it immediately.
-            if (m_GattActionQueue.size() == 1) {
-                m_GattActionQueue.peek().Do();
+            if (m_GattActionQueue.size() == 1)
+            {
+                try
+                {
+                    m_GattActionQueue.peek().Do();
+                }
+                catch (GattActionException e)
+                {
+                    // If exception occurred, dequeue immediately
+                    m_GattActionQueue.remove();
+                }
             }
 
-            m_GattActionQueueLock.unlock();
+            m_GattLock.unlock();
         }
 
         private GattAction DequeueGattAction(GattActionType type)
         {
-            m_GattActionQueueLock.lock();
+            m_GattLock.lock();
 
             GattAction completed;
 
@@ -742,17 +817,37 @@ public class ConnectionManager extends Service
                 completed = m_GattActionQueue.remove();
                 completed.Done();
 
-                if (m_GattActionQueue.size() > 0)
+                boolean continueLoop = true;
+                while (m_GattActionQueue.size() > 0 && continueLoop)
                 {
-                    m_GattActionQueue.peek().Do();
+                    try
+                    {
+                        m_GattActionQueue.peek().Do();
+                        // Only dequeue one action if no exception occurred
+                        continueLoop = false;
+                    }
+                    catch (GattActionException e)
+                    {
+                        continueLoop = true;
+                        m_GattActionQueue.remove();
+                    }
                 }
             }
             finally
             {
-                m_GattActionQueueLock.unlock();
+                m_GattLock.unlock();
             }
 
             return completed;
+        }
+
+        private void UpdateGatt(BluetoothGatt gatt)
+        {
+            m_GattLock.lock();
+
+            m_Gatt = gatt;
+
+            m_GattLock.unlock();
         }
 
         private String GetGattAction(String className) {
@@ -1069,28 +1164,6 @@ public class ConnectionManager extends Service
     public LinkedList<String> GetScannedDevices()
     {
         return m_ScannedDevices;
-    }
-
-    // TODO: remove connect/disconnect
-    public void ConnectDevice(Device device)
-    {
-        if (!Initialize()) return;
-        if (device == null) return;
-        if (device.IsConnected() || device.IsConnecting()) return;
-
-        Logger.Debug(TAG, "ConnectDevice");
-        // Clear gatt queue in case there are some unprocessed events
-        device.ClearGattActionQueue();
-        device.Connect();
-    }
-
-    public void DisconnectDevice(Device device)
-    {
-        if (!Initialize()) return;
-        if (device == null) return;
-        if (!device.IsConnected()) return;
-
-        device.Disconnect();
     }
 
     private final BroadcastReceiver m_Receiver = new BroadcastReceiver()

@@ -51,12 +51,8 @@ public class SyncClockActivity extends BluetoothActivity
                 ConnectionManager.Device device = m_ConnectionManager.GetDevice(intent.getStringExtra(ConnectionManager.ADDRESS));
                 if (device == null) return;
 
-                BluetoothGattCharacteristic c = device.GetCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID());
-                if (c == null) return;
-
                 // Set value to current time
-                c.setValue(Util.GetTimeInBytes(System.currentTimeMillis()));
-                device.WriteCharacteristic(c);
+                device.WriteCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID(), Util.GetTimeInBytes(System.currentTimeMillis()));
                 device.Disconnect();
             }
             else if (action.equals(ConnectionManager.ON_DEVICE_CONNECTED))
@@ -179,7 +175,7 @@ public class SyncClockActivity extends BluetoothActivity
 
                 ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
                 device.SetReadCharacteristicsWhenDiscovered(false);
-                m_ConnectionManager.ConnectDevice(device);
+                device.Connect();
             }
         });
 
