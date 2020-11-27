@@ -10,6 +10,7 @@
     <string name="signed_write">Signed Write</string>
     <string name="extended_props">Extended props</string>
     <string name="thermometer">Thermometer</string>
+    <string name="garagedoor">Garage Door</string>
     <string name="sync_clock">Sync Clock</string>
     <string name="scan">Scan</string>
     <string name="disconnect">Disconnect</string>

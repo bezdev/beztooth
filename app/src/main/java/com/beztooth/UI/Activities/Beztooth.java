@@ -65,5 +65,16 @@ public class Beztooth extends BluetoothActivity
                 view.getContext().startActivity(intent);
             }
         });
+
+        button = findViewById(R.id.garageDoorButton);
+        button.SetOnClick(new ViewInputHandler.OnClick()
+        {
+            @Override
+            public void Do(View view)
+            {
+                Intent intent = new Intent(view.getContext(), GarageDoorActivity.class);
+                view.getContext().startActivity(intent);
+            }
+        });
     }
 }

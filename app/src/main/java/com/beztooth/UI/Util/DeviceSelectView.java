@@ -17,35 +17,48 @@ public class DeviceSelectView
     private LayoutInflater m_LayoutInflater;
     private HashMap<String, View> m_DeviceSelectViews;
     private boolean m_IsAppend;
+    private boolean m_ReplaceIfExists;
 
     public DeviceSelectView(Context context, LinearLayout root)
     {
-        Initialize(context, root, true);
+        Initialize(context, root, true, false);
     }
 
     public DeviceSelectView(Context context, LinearLayout root, boolean isAppend)
     {
-        Initialize(context, root, isAppend);
+        Initialize(context, root, isAppend, false);
     }
 
-    private void Initialize(Context context, LinearLayout root, boolean isAppend)
+    public DeviceSelectView(Context context, LinearLayout root, boolean isAppend, boolean replaceIfExists)
+    {
+        Initialize(context, root, isAppend, replaceIfExists);
+    }
+
+    private void Initialize(Context context, LinearLayout root, boolean isAppend, boolean replaceIfExists)
     {
         m_Context = context;
         m_Root = root;
         m_LayoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         m_DeviceSelectViews = new HashMap<>();
         m_IsAppend = isAppend;
+        m_ReplaceIfExists = replaceIfExists;
     }
 
     public void AddDevice(String name, String address, ViewInputHandler.OnClick onClick)
     {
-        // If device is already visible, skip.
-        if (m_Root.findViewWithTag(address) != null)
+        View view = m_Root.findViewWithTag(address);
+        boolean deviceExists = view != null;
+
+        // Check if device is already visible
+        if (deviceExists && !m_ReplaceIfExists)
         {
             return;
         }
 
-        View view = m_LayoutInflater.inflate(R.layout.device_select, null);
+        if (!deviceExists)
+        {
+            view = m_LayoutInflater.inflate(R.layout.device_select, null);
+        }
 
         // Set the device name and address, if there is no name, only display the address.
         TextView textView = view.findViewById(R.id.device_select_name);
@@ -61,14 +74,13 @@ public class DeviceSelectView
         container.setTag(address);
         container.SetOnClick(onClick);
 
-        m_DeviceSelectViews.put(address, container);
-        if (m_IsAppend)
-        {
-            m_Root.addView(view);
-        }
-        else
-        {
-            m_Root.addView(view, 0);
+        if (!deviceExists || !m_ReplaceIfExists) {
+            m_DeviceSelectViews.put(address, container);
+            if (m_IsAppend) {
+                m_Root.addView(view);
+            } else {
+                m_Root.addView(view, 0);
+            }
         }
     }
 
