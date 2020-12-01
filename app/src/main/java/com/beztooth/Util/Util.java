@@ -1,8 +1,14 @@
 package com.beztooth.Util;
 
+import android.util.DisplayMetrics;
+import android.view.WindowManager;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 
 import static android.graphics.Color.rgb;
@@ -162,14 +168,34 @@ public class Util
 
             int year = (data[0] & 0xFF) + ((data[1] & 0xFF) << 8);
 
-            return String.format(Locale.getDefault(), "%d/%02d/%02d %02d:%02d:%02d", data[2], data[3], year, data[4], data[5], data[6]);
+            return String.format(Locale.getDefault(), "%02d/%02d/%d %02d:%02d:%02d", data[2], data[3], year, data[4], data[5], data[6]);
         }
 
         return "";
     }
 
+    public static Date GetDataFromData(byte[] data)
+    {
+        try
+        {
+            SimpleDateFormat dateParser = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+            return dateParser.parse(GetDataString(data, Constants.CharacteristicReadType.TIME));
+        }
+        catch (ParseException e)
+        {
+            return null;
+        }
+    }
+
     public static float ConvertPascalToMMHG(float pascal)
     {
         return pascal * MMHG_PER_PA;
+    }
+
+    public static int PixelToDP(WindowManager windowManager, int pixels)
+    {
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        windowManager.getDefaultDisplay().getMetrics(displayMetrics);
+        return (int) (pixels * displayMetrics.density);
     }
 }

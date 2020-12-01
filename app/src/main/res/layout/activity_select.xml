@@ -1,0 +1,14 @@
+<com.beztooth.UI.Util.BezButton
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/activity_select"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="20dp"
+    android:layout_marginLeft="20dp"
+    android:layout_marginRight="20dp"
+    android:padding="25dp"
+    android:background="@drawable/select_border"
+    android:textColor="@color/BezBlue"
+    android:textSize="36sp"
+    android:textStyle="bold"
+    android:textAlignment="center" />

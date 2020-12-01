@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_start"
+        android:enabled="true"
+        android:state_enabled="true"
+        android:title="@string/start"
+        android:visible="true" />
+    <item
+        android:id="@+id/menu_stop"
+        android:enabled="true"
+        android:state_enabled="true"
+        android:title="@string/stop"
+        android:visible="true" />
+</menu>

@@ -330,6 +330,9 @@ public class Constants {
     }
 
     public static final UUIDNamePair LEO_SERVER_V2_ALL_SENSOR_DATA = new UUIDNamePair("DBA51660-5986-44F4-B5A1-55d82EC69890", "All Sensor Data");
+    public static final UUIDNamePair KIMCHI_V1_SENSOR_SERVICE = new UUIDNamePair("29a79111-cc0d-42b2-b545-dac14f3da422", "Sensor Data Service");
+    public static final UUIDNamePair KIMCHI_V1_SENSOR_DATA = new UUIDNamePair("25353214-b080-48b7-bb96-2a49af082dbc", "Sensor Data");
+    public static final UUIDNamePair KIMCHI_V1_ALL_SENSOR_DATA = new UUIDNamePair("8e8b58b3-7e23-42d9-805f-2d5e6b7bec64", "All Sensor Data");
 
     public static final Device LEO_SERVER_V1 =
         new Device("00:0B:57:1A:88:EF", "LEO SERVER V1", new ArrayList<Service>() {{
@@ -346,10 +349,18 @@ public class Constants {
             }}));
         }});
 
+    public static final Device KIMCHI_V1 =
+        new Device("00:A0:50:00:00:00", "KIMCHI V1", new ArrayList<Service>() {{
+            add(new Service(KIMCHI_V1_SENSOR_SERVICE, new ArrayList<Characteristic>() {{
+                add(new Characteristic(KIMCHI_V1_SENSOR_DATA, CharacteristicReadType.CUSTOM));
+                add(new Characteristic(KIMCHI_V1_ALL_SENSOR_DATA, CharacteristicReadType.CUSTOM));
+            }}));
+        }});
     static
     {
         devices.add(LEO_SERVER_V1);
         devices.add(LEO_SERVER_V2);
+        devices.add(KIMCHI_V1);
     }
 
     public static class UUIDNamePair

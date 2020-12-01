@@ -244,7 +244,7 @@ public class ThermometerActivity extends BluetoothActivity
     private void UpdateTemperature(String temperature)
     {
         TextView temperatureView = findViewById(R.id.temperature);
-        temperatureView.setText(String.format(Locale.getDefault(), "%s\u2103", temperature, Constants.CharacteristicReadType.INTEGER));
+        temperatureView.setText(String.format(Locale.getDefault(), "%s\u2103", temperature));
 
         float temp = Float.parseFloat(temperature);
         int color;
@@ -277,7 +277,7 @@ public class ThermometerActivity extends BluetoothActivity
 
     private void UpdatePressure(String pressure)
     {
-        String pressureText = String.format(Locale.getDefault(), "%.1fmmHg", Util.ConvertPascalToMMHG(Float.parseFloat(pressure)));
+        String pressureText = String.format(Locale.getDefault(), "%d mmHg", Math.round(Util.ConvertPascalToMMHG(Float.parseFloat(pressure))));
         int unitIndex = pressureText.indexOf("mmHg");
 
         TextView pressureView = findViewById(R.id.pressure);

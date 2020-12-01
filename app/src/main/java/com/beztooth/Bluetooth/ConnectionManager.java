@@ -76,7 +76,6 @@ public class ConnectionManager extends Service
 
     private boolean m_IsInitialized;
     private boolean m_IsScanning;
-    private int m_Timeout;
 
     private Context m_Context;
 
@@ -98,7 +97,7 @@ public class ConnectionManager extends Service
         None,
         EnableNotification,
         DisableNotification,
-        EnableInidication,
+        EnableIndication,
         DisableIndication
     }
 
@@ -388,7 +387,7 @@ public class ConnectionManager extends Service
                     BluetoothGattCharacteristic c = GetCharacteristic(m_ServiceUUID, m_CharacteristicUUID);
                     if (c == null) throw new GattActionException("GattReadDescriptor failed.");
 
-                    if (m_Options == WriteDescriptorOptions.EnableInidication)
+                    if (m_Options == WriteDescriptorOptions.EnableIndication)
                     {
                         if ((c.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) != BluetoothGattCharacteristic.PROPERTY_INDICATE) throw new GattActionException("GattReadDescriptor failed.");;
                         m_Gatt.setCharacteristicNotification(c, true);
@@ -653,6 +652,11 @@ public class ConnectionManager extends Service
             QueueGattAction(new GattConnect());
         }
 
+        public void Close()
+        {
+            QueueGattAction(new GattClose());
+        }
+
         public void Disconnect()
         {
             QueueGattAction(new GattDisconnect());
@@ -686,7 +690,7 @@ public class ConnectionManager extends Service
         public void SetCharacteristicIndication(String serviceUUID, String characteristicUUID, boolean enable)
         {
             byte[] data = enable ? BluetoothGattDescriptor.ENABLE_INDICATION_VALUE : new byte[] { 0x00, 0x00 };
-            WriteDescriptorOptions options = enable ? WriteDescriptorOptions.EnableInidication : WriteDescriptorOptions.DisableIndication;
+            WriteDescriptorOptions options = enable ? WriteDescriptorOptions.EnableIndication : WriteDescriptorOptions.DisableIndication;
             QueueGattAction(new GattWriteDescriptor(serviceUUID, characteristicUUID, Constants.DESCRIPTOR_CLIENT_CHARACTERISTIC_CONFIGURATION.GetFullUUID(), data, options));
         }
 

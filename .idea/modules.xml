@@ -2,9 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="beztooth/app" />
-      <module fileurl="file://$PROJECT_DIR$/beztooth.iml" filepath="$PROJECT_DIR$/beztooth.iml" group="beztooth" />
-      <module fileurl="file://$PROJECT_DIR$/app/beztooth-app.iml" filepath="$PROJECT_DIR$/app/beztooth-app.iml" group="beztooth/app" />
+      <module fileurl="file://$PROJECT_DIR$/beztooth.iml" filepath="$PROJECT_DIR$/beztooth.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/beztooth.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/beztooth.app.iml" />
     </modules>
   </component>
 </project>

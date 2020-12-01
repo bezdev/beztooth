@@ -59,6 +59,7 @@ public class DeviceActivity extends BluetoothActivity
             }
             else if (action.equals(ConnectionManager.ON_DEVICE_DISCONNECTED))
             {
+                m_Device.Close();
                 finish();
             }
             else if (action.equals(ConnectionManager.ON_SERVICES_DISCOVERED))
@@ -134,6 +135,7 @@ public class DeviceActivity extends BluetoothActivity
 
         if (!m_Device.IsConnected())
         {
+            //m_Device.SetReadCharacteristicsWhenDiscovered(false);
             m_Device.Connect();
         }
         else
@@ -313,6 +315,8 @@ public class DeviceActivity extends BluetoothActivity
 
         String characteristicValue;
         characteristicValue = Util.GetDataString(data, type);
+
+        // Logger.Debug(TAG, "DATA READ: " + characteristicValue);
 
         textView.setText(characteristicValue);
     }

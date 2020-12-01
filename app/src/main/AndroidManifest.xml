@@ -21,6 +21,7 @@
         <activity android:name=".UI.Activities.SyncClockActivity" />
         <activity android:name=".UI.Activities.ThermometerActivity" />
         <activity android:name=".UI.Activities.GarageDoorActivity" />
+        <activity android:name=".UI.Activities.KimchiActivity" />
         <service
             android:name=".Bluetooth.ConnectionManager"
             android:enabled="true" />

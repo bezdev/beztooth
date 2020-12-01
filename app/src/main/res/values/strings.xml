@@ -2,6 +2,8 @@
     <string name="app_name">Beztooth</string>
     <string name="ble_not_supported">BLE is not supported on this device.</string>
     <string name="no_location_permission">No permission to access location.</string>
+    <string name="scan">Scan</string>
+    <string name="disconnect">Disconnect</string>
     <string name="read">Read</string>
     <string name="write">Write</string>
     <string name="write_no_response">Write no response</string>
@@ -9,9 +11,17 @@
     <string name="indicate">Indicate</string>
     <string name="signed_write">Signed Write</string>
     <string name="extended_props">Extended props</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+
     <string name="thermometer">Thermometer</string>
-    <string name="garagedoor">Garage Door</string>
     <string name="sync_clock">Sync Clock</string>
-    <string name="scan">Scan</string>
-    <string name="disconnect">Disconnect</string>
+    <string name="garage_door">Garage Door</string>
+    <string name="kimchi">Kimchi</string>
+
+    <string name="temperature">Temperature</string>
+    <string name="humidity">Humidity</string>
+    <string name="pressure">Pressure</string>
+    <string name="gas">Gas</string>
+    <string name="inner_temperature">Inner Temperature</string>
 </resources>
