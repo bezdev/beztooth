@@ -27,6 +27,7 @@ import com.beztooth.Util.*;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 
 public class DeviceActivity extends BluetoothActivity
 {
@@ -164,13 +165,16 @@ public class DeviceActivity extends BluetoothActivity
 
     private void ShowServices()
     {
+        LinearLayout insertPoint = findViewById(R.id.service_scroll);
+        insertPoint.removeAllViews();
+
         for (BluetoothService s : m_Device.GetServices())
         {
-            AddServiceSelect(s.GetUUID(), s.GetCharacteristics());
+            insertPoint.addView(CreateServiceSelectView(s.GetUUID(), s.GetCharacteristics()));
         }
     }
 
-    private void AddServiceSelect(String serviceUUID, List<BluetoothCharacteristic> characteristics)
+    private View CreateServiceSelectView(String serviceUUID, List<BluetoothCharacteristic> characteristics)
     {
         String serviceName = Constants.Services.Get(m_Address, serviceUUID);
 
@@ -190,16 +194,13 @@ public class DeviceActivity extends BluetoothActivity
         {
             serviceUUIDView.setVisibility(View.GONE);
         }
-        //v.setClickable(true);
-        //v.setOnClickListener();
 
         for (BluetoothCharacteristic c : characteristics)
         {
             AddCharacteristicView(serviceUUID, c.GetUUID(), serviceView);
         }
 
-        LinearLayout insertPoint = findViewById(R.id.service_scroll);
-        insertPoint.addView(serviceView);
+        return serviceView;
     }
 
     private void AddCharacteristicView(String serviceUUID, String characteristicUUID, View serviceView)
@@ -315,8 +316,6 @@ public class DeviceActivity extends BluetoothActivity
 
         String characteristicValue;
         characteristicValue = Util.GetDataString(data, type);
-
-        // Logger.Debug(TAG, "DATA READ: " + characteristicValue);
 
         textView.setText(characteristicValue);
     }

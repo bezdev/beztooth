@@ -96,7 +96,7 @@ public class KimchiActivity extends BluetoothActivity
 
                     m_LoadProgress.setVisibility(View.GONE);
 
-                    //m_Device.ReadCharacteristic(Constants.KIMCHI_V1_SENSOR_SERVICE.UUID, Constants.KIMCHI_V1_SENSOR_DATA.UUID);
+                    m_Device.ReadCharacteristic(Constants.KIMCHI_V1_SENSOR_SERVICE.UUID, Constants.KIMCHI_V1_SENSOR_DATA.UUID);
                     m_Device.ReadCharacteristic(Constants.AddBaseUUID(Constants.SERVICE_CURRENT_TIME.UUID), Constants.AddBaseUUID(Constants.CHARACTERISTIC_CURRENT_TIME.UUID));
                     break;
                 case ConnectionManager.ON_DEVICE_DISCONNECTED:

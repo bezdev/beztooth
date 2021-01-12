@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -876,6 +877,8 @@ public class ConnectionManager extends Service
         private void BroadcastOnCharacteristicRead(String service, String uuid, byte[] value)
         {
             if (value == null || value.length == 0) return;
+
+            Log(String.format(Locale.getDefault(), "Characteristic Read: [%s] [%s]: %s", service, uuid, Util.GetDataString(value, Constants.CharacteristicReadType.HEX)));
 
             Intent intent = new Intent(ON_CHARACTERISTIC_READ);
             intent.putExtra(ADDRESS, m_Address);
