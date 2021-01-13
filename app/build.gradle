@@ -16,7 +16,31 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    flavorDimensions "version"
     productFlavors {
+        full {
+            dimension "version"
+            applicationIdSuffix ".full"
+            versionNameSuffix "-full"
+        }
+
+        thermometer {
+            dimension "version"
+            applicationIdSuffix ".thermometer"
+            versionNameSuffix "-thermometer"
+        }
+
+        syncclock {
+            dimension "version"
+            applicationIdSuffix ".syncclock"
+            versionNameSuffix "-syncclock"
+        }
+
+        garagedoor {
+            dimension "version"
+            applicationIdSuffix ".garagedoor"
+            versionNameSuffix "-garagedoor"
+        }
     }
 }
 
