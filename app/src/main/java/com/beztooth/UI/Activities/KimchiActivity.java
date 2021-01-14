@@ -31,8 +31,8 @@ import java.util.Locale;
 
 public class KimchiActivity extends BluetoothActivity
 {
-    private static final String TAG = "ThermometerActivity";
-    private static final Constants.Device SUPPORTED_DEVICE = Constants.KIMCHI_V1;
+    private static final String TAG = "KimchiActivity";
+    private static final Constants.Device SUPPORTED_DEVICE = Constants.KIMCHI_V2;
     private static final int CREATE_FILE = 1;
 
     private ConnectionManager.Device m_Device;
@@ -107,49 +107,7 @@ public class KimchiActivity extends BluetoothActivity
 
                     if (m_IsDownloading)
                     {
-                        try
-                        {
-                            OutputStream os = getApplicationContext().getContentResolver().openOutputStream(m_URI);
-                            if (os != null)
-                            {
-                                Calendar c = Calendar.getInstance();
-                                c.setTime(m_StartDate);
-
-                                SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss", Locale.US);
-
-                                os.write("time,temperature,humidity,pressure,gas,inner temperature\n".getBytes());
-
-                                for (byte[] chunk : m_DownloadedData)
-                                {
-                                    // Read 8 bytes at a time
-                                    for (int i = 0; i < chunk.length; i += 8)
-                                    {
-                                        c.add(Calendar.MINUTE, 1);
-                                        String time = dateFormat.format(c.getTime());
-
-                                        KimchiSensorData ksd = GetKimchiSensorData(new byte[] {
-                                            chunk[i],
-                                            chunk[i + 1],
-                                            chunk[i + 2],
-                                            chunk[i + 3],
-                                            chunk[i + 4],
-                                            chunk[i + 5],
-                                            chunk[i + 6],
-                                            chunk[i + 7]
-                                        });
-
-                                        String csvLine = String.format(Locale.getDefault(), "%s,%.1f,%d,%d,%d,%.1f\n", time, ksd.Temperature, ksd.Humidity, ksd.Pressure, ksd.Gas, ksd.InnerTemperature);
-                                        os.write(csvLine.getBytes());
-                                    }
-                                }
-
-                                os.close();
-                            }
-                        }
-                        catch (IOException e)
-                        {
-                            Logger.Debug(TAG, e.getStackTrace().toString());
-                        }
+                        WriteDataToFile();
                     }
 
                     finish();
@@ -267,7 +225,6 @@ public class KimchiActivity extends BluetoothActivity
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             intent.setType("text/csv");
             intent.putExtra(Intent.EXTRA_TITLE, "kimchi_data.csv");
-
             startActivityForResult(intent, CREATE_FILE);
         }
 
@@ -332,6 +289,52 @@ public class KimchiActivity extends BluetoothActivity
             {
                 m_DownloadedData.add(data);
             }
+        }
+    }
+
+    private void WriteDataToFile()
+    {
+        try
+        {
+            OutputStream os = getApplicationContext().getContentResolver().openOutputStream(m_URI);
+            if (os == null) return;
+
+            Calendar c = Calendar.getInstance();
+            c.setTime(m_StartDate);
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss", Locale.US);
+
+            os.write("time,temperature,humidity,pressure,gas,inner temperature\n".getBytes());
+            for (byte[] chunk : m_DownloadedData)
+            {
+                // Read 8 bytes at a time
+                for (int i = 0; i < chunk.length; i += 8)
+                {
+                    //c.add(Calendar.MINUTE, 1);
+                    c.add(Calendar.SECOND, 5);
+                    String time = dateFormat.format(c.getTime());
+
+                    KimchiSensorData ksd = GetKimchiSensorData(new byte[] {
+                            chunk[i],
+                            chunk[i + 1],
+                            chunk[i + 2],
+                            chunk[i + 3],
+                            chunk[i + 4],
+                            chunk[i + 5],
+                            chunk[i + 6],
+                            chunk[i + 7]
+                    });
+
+                    String csvLine = String.format(Locale.getDefault(), "%s,%.1f,%d,%d,%d,%.1f\n", time, ksd.Temperature, ksd.Humidity, ksd.Pressure, ksd.Gas, ksd.InnerTemperature);
+                    os.write(csvLine.getBytes());
+                }
+            }
+
+            os.close();
+        }
+        catch (IOException e)
+        {
+            Logger.Debug(TAG, e.getStackTrace().toString());
         }
     }
 

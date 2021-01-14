@@ -356,11 +356,21 @@ public class Constants {
                 add(new Characteristic(KIMCHI_V1_ALL_SENSOR_DATA, CharacteristicReadType.CUSTOM));
             }}));
         }});
+
+    public static final Device KIMCHI_V2 =
+        new Device("84:2E:14:9D:6D:F4", "KIMCHI V2", new ArrayList<Service>() {{
+            add(new Service(KIMCHI_V1_SENSOR_SERVICE, new ArrayList<Characteristic>() {{
+                add(new Characteristic(KIMCHI_V1_SENSOR_DATA, CharacteristicReadType.CUSTOM));
+                add(new Characteristic(KIMCHI_V1_ALL_SENSOR_DATA, CharacteristicReadType.CUSTOM));
+            }}));
+        }});
+
     static
     {
         devices.add(LEO_SERVER_V1);
         devices.add(LEO_SERVER_V2);
         devices.add(KIMCHI_V1);
+        devices.add(KIMCHI_V2);
     }
 
     public static class UUIDNamePair
