@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
+import android.view.LayoutInflater;
 import android.widget.Toast;
 
 import com.beztooth.Bluetooth.ConnectionManager;
@@ -28,12 +29,13 @@ public abstract class BluetoothActivity extends AppCompatActivity
 
     protected Activity m_Activity;
     protected ConnectionManager m_ConnectionManager;
+    protected LayoutInflater m_LayoutInflater;
 
     // Whether or not the Activity is currently visible.
     private boolean m_IsActive = false;
     private boolean m_IsConnectionManagerBound;
 
-    private ServiceConnection m_ConnectionManagerConnection = new ServiceConnection()
+    private final ServiceConnection m_ConnectionManagerConnection = new ServiceConnection()
     {
         @Override
         public void onServiceConnected(ComponentName className, IBinder service)
@@ -52,7 +54,7 @@ public abstract class BluetoothActivity extends AppCompatActivity
         }
     };
 
-    private BroadcastReceiver m_BroadcastReceiver = new BroadcastReceiver()
+    private final BroadcastReceiver m_BluetoothReceiver = new BroadcastReceiver()
     {
         @Override
         public void onReceive(Context context, Intent intent)
@@ -69,6 +71,32 @@ public abstract class BluetoothActivity extends AppCompatActivity
         }
     };
 
+    private final BroadcastReceiver m_BroadcastReceiver = new BroadcastReceiver()
+    {
+        @Override
+        public void onReceive(Context context, Intent intent)
+        {
+            OnBroadcastEvent(intent);
+        }
+    };
+
+    protected void OnConnectionManagerConnected()
+    {
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ConnectionManager.ON_SCAN_STARTED);
+        intentFilter.addAction(ConnectionManager.ON_SCAN_STOPPED);
+        intentFilter.addAction(ConnectionManager.ON_DEVICE_SCANNED);
+        intentFilter.addAction(ConnectionManager.ON_DEVICE_CONNECTED);
+        intentFilter.addAction(ConnectionManager.ON_DEVICE_DISCONNECTED);
+        intentFilter.addAction(ConnectionManager.ON_SERVICES_DISCOVERED);
+        intentFilter.addAction(ConnectionManager.ON_CHARACTERISTIC_READ);
+        intentFilter.addAction(ConnectionManager.ON_CHARACTERISTIC_WRITE);
+        intentFilter.addAction(ConnectionManager.ON_DESCRIPTOR_READ);
+        LocalBroadcastManager.getInstance(this).registerReceiver(m_BroadcastReceiver, intentFilter);
+    }
+
+    protected void OnBroadcastEvent(Intent intent) { }
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -76,12 +104,13 @@ public abstract class BluetoothActivity extends AppCompatActivity
 
         m_Activity = this;
         m_IsConnectionManagerBound = false;
+        m_LayoutInflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
         CheckPermissions();
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ConnectionManager.ON_BLUETOOTH_DISABLED);
-        LocalBroadcastManager.getInstance(this).registerReceiver(m_BroadcastReceiver, intentFilter);
+        LocalBroadcastManager.getInstance(this).registerReceiver(m_BluetoothReceiver, intentFilter);
 
         Intent intent = new Intent(this, ConnectionManager.class);
         bindService(intent, m_ConnectionManagerConnection, Context.BIND_AUTO_CREATE);
@@ -118,14 +147,13 @@ public abstract class BluetoothActivity extends AppCompatActivity
     @Override
     protected void onDestroy()
     {
+        super.onDestroy();
+
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(m_BluetoothReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(m_BroadcastReceiver);
         unbindService(m_ConnectionManagerConnection);
         m_IsConnectionManagerBound = false;
-
-        super.onDestroy();
     }
-
-    protected abstract void OnConnectionManagerConnected();
 
     private void CheckPermissions()
     {

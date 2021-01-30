@@ -1,0 +1,113 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:padding="10dp"
+        android:background="@drawable/select_border"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:textColor="@color/PrimaryDark"
+            android:layout_marginTop="20dp"
+            android:gravity="center" />
+        <TextView
+            android:id="@+id/time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:textColor="@color/PrimaryDark"
+            android:layout_marginTop="5dp"
+            android:gravity="center" />
+        <GridLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:alignmentMode="alignBounds"
+            android:columnCount="3"
+            android:columnOrderPreserved="false"
+            android:orientation="horizontal"
+            android:padding="10dp"
+            android:useDefaultMargins="true" >
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_columnSpan="1"
+                android:textSize="24sp"
+                android:text="@string/inner" />
+            <TextView
+                android:id="@+id/inner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_columnSpan="2"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/Red" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_columnSpan="1"
+                android:textSize="24sp"
+                android:text="@string/outer" />
+            <TextView
+                android:id="@+id/outer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_columnSpan="2"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/Red" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_columnSpan="1"
+                android:textSize="24sp"
+                android:text="@string/humidity" />
+            <TextView
+                android:id="@+id/humidity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_columnSpan="2"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/BezBlue" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_columnSpan="1"
+                android:textSize="24sp"
+                android:text="@string/pressure" />
+            <TextView
+                android:id="@+id/pressure"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_columnSpan="2"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/CommentGreen" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_columnSpan="1"
+                android:textSize="24sp"
+                android:text="@string/gas" />
+            <TextView
+                android:id="@+id/gas"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_columnSpan="2"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/CommentGreen" />
+        </GridLayout>
+    </LinearLayout>
+</LinearLayout>

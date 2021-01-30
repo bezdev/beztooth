@@ -34,7 +34,6 @@ public class DeviceActivity extends BluetoothActivity
     public final static String TAG = "DeviceActivity";
 
     private ProgressBar m_ConnectDiscoverProgress;
-    private LayoutInflater m_LayoutInflater;
 
     private ConnectionManager.Device m_Device;
     private boolean m_AreServicesDiscovered;
@@ -86,8 +85,6 @@ public class DeviceActivity extends BluetoothActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device);
-
-        m_LayoutInflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
         m_ConnectDiscoverProgress = findViewById(R.id.connectDiscoverProgress);
         m_ConnectDiscoverProgress.setVisibility(View.GONE);

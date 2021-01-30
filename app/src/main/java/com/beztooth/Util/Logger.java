@@ -42,7 +42,13 @@ public class Logger
         }
     }
 
-    public static void Error(String message) {
-        Log.e(TAG, message);
+    public static void Error(String tag, String message)
+    {
+        Log.e(tag, message);
+    }
+
+    public static void Exception(String tag, Exception ex)
+    {
+        Log.e(tag, ex.getMessage());
     }
 }

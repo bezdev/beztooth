@@ -63,7 +63,7 @@ public class DevicesActivity extends BluetoothActivity
         m_ScanProgress = findViewById(R.id.scanProgress);
         m_ScanProgress.setVisibility(View.GONE);
 
-        m_DeviceSelectView  = new DeviceSelectView(getApplicationContext(), (LinearLayout)findViewById(R.id.device_scroll), true);
+        m_DeviceSelectView = new DeviceSelectView(getApplicationContext(), (LinearLayout)findViewById(R.id.device_scroll), true);
 
         AddEventListeners();
     }

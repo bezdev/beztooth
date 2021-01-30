@@ -23,5 +23,6 @@
     <string name="humidity">Humidity</string>
     <string name="pressure">Pressure</string>
     <string name="gas">Gas</string>
-    <string name="inner_temperature">Inner Temperature</string>
+    <string name="inner">Inner</string>
+    <string name="outer">Outer</string>
 </resources>

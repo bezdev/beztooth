@@ -36,7 +36,6 @@ public class ThermometerActivity extends BluetoothActivity
     private static final float COLD_TEMPERATURE = 4.44444f;
     private static final float HOT_TEMPERATURE = 35.2222f;
 
-
     private ConnectionManager.Device m_Device;
     private boolean m_IsConnected;
 

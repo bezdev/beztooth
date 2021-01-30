@@ -16,10 +16,16 @@ import com.beztooth.R;
 import com.beztooth.UI.Util.DeviceSelectView;
 import com.beztooth.UI.Util.ViewInputHandler;
 
+import java.util.Arrays;
+
 public class GarageDoorActivity extends BluetoothActivity
 {
     private static final String TAG = "GarageDoorActivity";
-    private static final String MAC_ADDRESS = "08:6B:D7:6E:E1:7F";
+    private static final String[] SUPPORTED_DEVICES = new String[] {
+            "08:6B:D7:6E:E1:7F",
+            "84:2E:14:23:C3:AE"
+    };
+
     private static final int SCAN_INTERVAL = 5000;
 
     private ProgressBar m_ScanProgress;
@@ -133,7 +139,16 @@ public class GarageDoorActivity extends BluetoothActivity
         if (device == null) return;
 
         // filter devices
-        if (!device.GetAddress().equals(MAC_ADDRESS)) return;
+        boolean isSupportedDevice = false;
+        for (String supportedDevice : SUPPORTED_DEVICES)
+        {
+            if (device.GetAddress().equals(supportedDevice))
+            {
+                isSupportedDevice = true;
+                break;
+            }
+        }
+        if (!isSupportedDevice) return;
 
         m_DeviceSelectView.AddDevice(device.GetName(), device.GetAddress(), new ViewInputHandler.OnClick()
         {
