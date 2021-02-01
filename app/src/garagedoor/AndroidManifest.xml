@@ -3,7 +3,9 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <application
-        android:label="@string/garage_door" >
+        android:label="@string/garage_door" 
+        android:icon="@drawable/ic_launcher_garage_door"
+        android:roundIcon="@drawable/ic_launcher_garage_door">
         <activity android:name="com.beztooth.UI.Activities.GarageDoorActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
