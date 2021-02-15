@@ -4,8 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools">
     <application
         android:label="@string/thermometer"
-        android:icon="@drawable/ic_bluetooth_connected_black_24dp"
-        android:roundIcon="@drawable/ic_bluetooth_connected_black_24dp" >
+        android:icon="@drawable/ic_launcher_thermometer"
+        android:roundIcon="@drawable/ic_launcher_thermometer" >
         <activity android:name="com.beztooth.UI.Activities.ThermometerActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -4,8 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools">
     <application
         android:label="@string/sync_clock"
-        android:icon="@drawable/ic_bluetooth_connected_black_24dp"
-        android:roundIcon="@drawable/ic_bluetooth_connected_black_24dp" >
+        android:icon="@drawable/ic_launcher_sync_clock"
+        android:roundIcon="@drawable/ic_launcher_sync_clock" >
         <activity android:name="com.beztooth.UI.Activities.SyncClockActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
