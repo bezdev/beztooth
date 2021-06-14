@@ -58,7 +58,7 @@ public class SyncClockActivity extends BluetoothActivity
                 if (device == null) return;
 
                 boolean hasTimeCharacteristic = device.HasCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID());
-                boolean hasAlarmCharacteristic = true;//device.HasCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_REFERENCE_TIME.GetFullUUID());
+                boolean hasAlarmCharacteristic = device.HasCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_REFERENCE_TIME.GetFullUUID());
 
                 String address = intent.getStringExtra(ConnectionManager.ADDRESS);
                 m_DeviceSelectView.SetDeviceSelectState(address, true);
@@ -78,13 +78,14 @@ public class SyncClockActivity extends BluetoothActivity
                             String address = ((View) (view.getParent().getParent().getParent())).getTag().toString();
                             ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
                             device.WriteCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID(), Util.GetTimeInBytes(System.currentTimeMillis()));
-                            device.ReadCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID());
+                            //device.ReadCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID());
                         }
                     });
                     syncButton.setVisibility(View.VISIBLE);
 
                     TextView label = extra.findViewById(R.id.time_label);
                     label.setVisibility(View.VISIBLE);
+                    device.ReadCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID());
                 }
 
                 if (hasAlarmCharacteristic)
@@ -136,6 +137,7 @@ public class SyncClockActivity extends BluetoothActivity
 
                     TextView label = extra.findViewById(R.id.alarm_label);
                     label.setVisibility(View.VISIBLE);
+                    device.ReadCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_REFERENCE_TIME.GetFullUUID());
                 }
 
                 m_DeviceSelectView.SetExtra(address, extra);
@@ -158,12 +160,14 @@ public class SyncClockActivity extends BluetoothActivity
                     TextView timeLabel = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.time_label);
                     timeLabel.setText(Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.TIME));
                 }
+                /*
                 if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(Constants.CHARACTERISTIC_REFERENCE_TIME.GetFullUUID()))
                 {
                     String address = intent.getStringExtra(ConnectionManager.ADDRESS);
                     TextView alarmLabel = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.alarm_label);
                     alarmLabel.setText(Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.TIME));
                 }
+                */
             }
             else if (action.equals(ConnectionManager.ON_CHARACTERISTIC_READ))
             {
@@ -185,7 +189,7 @@ public class SyncClockActivity extends BluetoothActivity
                     }
                     else
                     {
-                        alarmLabel.setText(data[0] + data[1] + ":" + data[2] + data[3]);
+                        alarmLabel.setText(String.valueOf(data[0]) + String.valueOf(data[1]) + ":" + String.valueOf(data[2]) + String.valueOf(data[3]));
                     }
                 }
             }
@@ -294,7 +298,7 @@ public class SyncClockActivity extends BluetoothActivity
 
                 ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
                 if (device.IsConnected()) return;
-                device.SetReadCharacteristicsWhenDiscovered(true);
+                device.SetReadCharacteristicsWhenDiscovered(false);
                 device.Connect();
             }
         });
