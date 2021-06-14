@@ -707,6 +707,11 @@ public class ConnectionManager extends Service
             m_ReadCharacteristicsWhenDiscovered = readCharacteristicsWhenDiscovered;
         }
 
+        public boolean HasCharacteristic(String serviceUUID, String characteristicUUID)
+        {
+            return GetCharacteristic(serviceUUID, characteristicUUID) != null;
+        }
+
         private BluetoothGattService GetService(String service)
         {
             if (!IsConnected()) return null;

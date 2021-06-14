@@ -22,4 +22,11 @@
         <item name="android:textColor">@color/SoftWhite</item>
         <item name="android:backgroundTint">@color/Accent</item>
     </style>
+
+    <style name="AppTheme.TimePicker.Dialog" parent="Theme.AppCompat.Light.Dialog">
+        <item name="colorControlActivated">@color/Accent</item>
+        <item name="colorAccent">@color/BezBlue</item>
+        <item name="android:textColorPrimary">@color/BezBlue</item>
+        <item name="android:textColorSecondary">@color/Accent</item>
+    </style>
 </resources>

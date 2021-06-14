@@ -25,4 +25,7 @@
     <string name="gas">Gas</string>
     <string name="inner">Inner</string>
     <string name="outer">Outer</string>
+
+    <string name="sync_time">Sync Time</string>
+    <string name="set_alarm">Set Alarm</string>
 </resources>

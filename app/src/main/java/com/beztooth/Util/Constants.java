@@ -25,6 +25,7 @@ public class Constants {
     public static final UUIDNamePair SERVICE_CURRENT_TIME = new UUIDNamePair("1805", "Current Time Service");
     public static final UUIDNamePair SERVICE_ENVIRONMENTAL_SENSING = new UUIDNamePair("181A", "Environmental Sensing");
     public static final UUIDNamePair CHARACTERISTIC_CURRENT_TIME = new UUIDNamePair("2A2B", "Current Time");
+    public static final UUIDNamePair CHARACTERISTIC_REFERENCE_TIME = new UUIDNamePair("2A14", "Reference Time Information");
     public static final UUIDNamePair CHARACTERISTIC_TEMPERATURE = new UUIDNamePair("2A6E", "Temperature");
     public static final UUIDNamePair CHARACTERISTIC_HUMIDITY = new UUIDNamePair("2A6F", "Humidity");
     public static final UUIDNamePair CHARACTERISTIC_PRESSURE = new UUIDNamePair("2A6D", "Pressure");
@@ -244,7 +245,7 @@ public class Constants {
         characteristics.put("2B1E", new Characteristic("2B1E", "RC Settings"));
         characteristics.put("2B1F", new Characteristic("2B1F", "Reconnection Configuration Control Point"));
         characteristics.put("2A52", new Characteristic("2A52", "Record Access Control Point"));
-        characteristics.put("2A14", new Characteristic("2A14", "Reference Time Information"));
+        characteristics.put(CHARACTERISTIC_REFERENCE_TIME.UUID, new Characteristic(CHARACTERISTIC_REFERENCE_TIME, CharacteristicReadType.TIME));
         characteristics.put("2B37", new Characteristic("2B37", "Registered User Characteristic"));
         characteristics.put("2A3A", new Characteristic("2A3A", "Removable"));
         characteristics.put("2A4D", new Characteristic("2A4D", "Report"));

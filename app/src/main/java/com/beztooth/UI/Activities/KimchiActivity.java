@@ -381,8 +381,7 @@ public class KimchiActivity extends BluetoothActivity
                 // Read 8 bytes at a time
                 for (int i = 0; i < chunk.length; i += 8)
                 {
-                    //c.add(Calendar.MINUTE, 1);
-                    c.add(Calendar.SECOND, 5);
+                    c.add(Calendar.MINUTE, 1);
                     String time = dateFormat.format(c.getTime());
 
                     KimchiSensorData ksd = KimchiSensorData.CreateFromBytes(new byte[] {

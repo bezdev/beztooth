@@ -1,0 +1,42 @@
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:alignmentMode="alignBounds"
+    android:columnCount="2"
+    android:columnOrderPreserved="false"
+    android:orientation="horizontal" >
+    <com.beztooth.UI.Util.BezButton
+        android:id="@+id/sync_clock_action"
+        android:background="@drawable/select_border_medium"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        android:textColor="@color/BezBlue"
+        android:visibility="gone"
+        android:text="@string/sync_time" />
+    <TextView
+        android:id="@+id/time_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:textSize="18sp"
+        android:visibility="gone" />
+    <com.beztooth.UI.Util.BezButton
+        android:id="@+id/set_alarm_action"
+        android:background="@drawable/select_border_medium"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textStyle="bold"
+        android:textColor="@color/BezBlue"
+        android:visibility="gone"
+        android:text="@string/set_alarm" />
+    <TextView
+        android:id="@+id/alarm_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="20dp"
+        android:textSize="18sp"
+        android:visibility="gone" />
+</GridLayout>

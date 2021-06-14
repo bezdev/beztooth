@@ -44,6 +44,11 @@ public class DeviceSelectView
         m_ReplaceIfExists = replaceIfExists;
     }
 
+    public View GetRoot()
+    {
+        return m_Root;
+    }
+
     public void AddDevice(String name, String address, ViewInputHandler.OnClick onClick)
     {
         View view = m_Root.findViewWithTag(address);
@@ -146,8 +151,17 @@ public class DeviceSelectView
             view.setAlpha(.5f);
             view.setClickable(false);
         }
-
     }
+
+    public void SetExtra(String address, View extraView)
+    {
+        if (!m_DeviceSelectViews.containsKey(address)) return;
+
+        View view = m_DeviceSelectViews.get(address);
+        LinearLayout insertPoint = view.findViewById(R.id.device_select_extra);
+        insertPoint.addView(extraView);
+    }
+
     public void ClearDevices()
     {
         if (m_Root != null)
