@@ -28,7 +28,7 @@ import java.util.Locale;
 public class SyncClockActivity extends BluetoothActivity
 {
     private static final String TAG = "SyncClockActivity";
-    private static final String CLOCK_DEVICE_PREFIX = "Sergei";
+    private static final String CLOCK_DEVICE_PREFIX = "Clock";
 
     private ProgressBar m_ScanProgress;
     private DeviceSelectView m_DeviceSelectView;
