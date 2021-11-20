@@ -4,7 +4,8 @@
     android:alignmentMode="alignBounds"
     android:columnCount="2"
     android:columnOrderPreserved="false"
-    android:orientation="horizontal" >
+    android:orientation="horizontal"
+    android:paddingTop="10dp">
     <com.beztooth.UI.Util.BezButton
         android:id="@+id/sync_clock_action"
         android:background="@drawable/select_border_medium"
@@ -38,5 +39,46 @@
         android:layout_marginTop="10dp"
         android:layout_marginStart="20dp"
         android:textSize="18sp"
+        android:visibility="gone" />
+    <TextView
+        android:id="@+id/beeps_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:textSize="18sp"
+        android:text="@string/beeps"
+        android:visibility="gone"  />
+    <SeekBar
+        android:id="@+id/beeps_slider"
+        style="@style/Widget.AppCompat.SeekBar.Discrete"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone" />
+    <TextView
+        android:id="@+id/brightness_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:textSize="18sp"
+        android:text="@string/brightness"
+        android:visibility="gone" />
+    <SeekBar
+        android:id="@+id/brightness_slider"
+        style="@style/Widget.AppCompat.SeekBar.Discrete"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone" />
+    <TextView
+        android:id="@+id/beeps_value"
+        android:layout_width="80dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1" />
+    <TextView
+        android:id="@+id/brightness_value"
+        android:layout_width="80dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:visibility="gone" />
 </GridLayout>

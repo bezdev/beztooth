@@ -28,4 +28,6 @@
 
     <string name="sync_time">Sync Time</string>
     <string name="set_alarm">Set Alarm</string>
+    <string name="brightness">Brightness</string>
+    <string name="beeps">Beeps</string>
 </resources>
