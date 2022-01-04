@@ -5,6 +5,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
@@ -41,6 +45,8 @@ public class SyncClockActivity extends BluetoothActivity
 
     private ProgressBar m_ScanProgress;
     private DeviceSelectView m_DeviceSelectView;
+    private View m_BeepsThumb;
+    private View m_BrightnessThumb;
 
     private BroadcastReceiver m_BroadcastReceiver = new BroadcastReceiver()
     {
@@ -77,23 +83,6 @@ public class SyncClockActivity extends BluetoothActivity
                 String address = intent.getStringExtra(ConnectionManager.ADDRESS);
                 m_DeviceSelectView.OnDeviceConnectionStatusChanged(address, false, intent.getBooleanExtra(ConnectionManager.DATA, false));
                 m_DeviceSelectView.SetDeviceSelectState(address, true);
-            }
-            else if (action.equals(ConnectionManager.ON_CHARACTERISTIC_WRITE))
-            {
-                if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID()))
-                {
-                    String address = intent.getStringExtra(ConnectionManager.ADDRESS);
-                    TextView timeLabel = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.time_label);
-                    timeLabel.setText(Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.TIME));
-                }
-                /*
-                if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(Constants.CHARACTERISTIC_REFERENCE_TIME.GetFullUUID()))
-                {
-                    String address = intent.getStringExtra(ConnectionManager.ADDRESS);
-                    TextView alarmLabel = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.alarm_label);
-                    alarmLabel.setText(Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.TIME));
-                }
-                */
             }
             else if (action.equals(ConnectionManager.ON_CHARACTERISTIC_READ))
             {
@@ -142,6 +131,8 @@ public class SyncClockActivity extends BluetoothActivity
         setContentView(R.layout.activity_sync_clock);
 
         m_DeviceSelectView = new DeviceSelectView(getApplicationContext(), (LinearLayout)findViewById(R.id.device_scroll));
+        m_BeepsThumb = m_LayoutInflater.inflate(R.layout.seekbar_thumb, null, false);
+        m_BrightnessThumb = m_LayoutInflater.inflate(R.layout.seekbar_thumb, null, false);
 
         AddEventListeners();
 
@@ -226,32 +217,9 @@ public class SyncClockActivity extends BluetoothActivity
 
         if (!device.GetName().startsWith(CLOCK_DEVICE_PREFIX)) return;
 
-        m_DeviceSelectView.AddDevice(device.GetName(), device.GetAddress(), new ViewInputHandler.OnClick()
-        {
-            @Override
-            public void Do(View view)
-            {
-                String address = view.getTag().toString();
-                ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
-                if (device.IsConnected() || device.IsConnecting()) return;
+        m_DeviceSelectView.AddDevice(device.GetName(), device.GetAddress(), null);
 
-                m_DeviceSelectView.SetDeviceSelectState(address, false);
-
-                device.SetReadCharacteristicsWhenDiscovered(false);
-                device.Connect();
-            }
-        });
-
-        // If device is already connected, we can't sync.
-        if (device.IsConnected())
-        {
-            m_DeviceSelectView.OnDeviceConnectionStatusChanged(address, true, false);
-            m_DeviceSelectView.SetDeviceSelectState(address, false);
-        }
-        else
-        {
-            device.Connect();
-        }
+        device.Connect();
     }
 
     private void AddExtra(final ConnectionManager.Device device)
@@ -268,7 +236,7 @@ public class SyncClockActivity extends BluetoothActivity
                     String address = ((View) (view.getParent().getParent().getParent())).getTag().toString();
                     ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
                     device.WriteCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID(), Util.GetTimeInBytes(System.currentTimeMillis()));
-                    //device.ReadCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID());
+                    device.ReadCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID());
                 }
             });
             syncButton.setVisibility(View.VISIBLE);
@@ -296,15 +264,6 @@ public class SyncClockActivity extends BluetoothActivity
 
                         device.WriteCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_REFERENCE_TIME.GetFullUUID(), data);
                         device.ReadCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_REFERENCE_TIME.GetFullUUID());
-
-                        /*
-                        Calendar cal = Calendar.getInstance();
-                        boolean isAlarmTomorrow = cal.get(Calendar.HOUR_OF_DAY) > hour && cal.get(Calendar.MINUTE) > minute;
-                        Calendar alarmTime = new GregorianCalendar(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH), hour, minute);
-                        if (isAlarmTomorrow) alarmTime.add(Calendar.DATE, 1);
-                        device.WriteCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID(), Util.GetTimeInBytes((alarmTime.getTimeInMillis())));
-                        device.ReadCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID());
-                        */
                     }
                 };
 
@@ -335,7 +294,7 @@ public class SyncClockActivity extends BluetoothActivity
             seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {
-                    SetProgress(seekBar, (TextView) findViewById(R.id.beeps_value), progress);
+                    SetProgress(getResources(), seekBar, m_BeepsThumb, progress);
                 }
 
                 @Override
@@ -345,11 +304,12 @@ public class SyncClockActivity extends BluetoothActivity
 
                 @Override
                 public void onStopTrackingTouch(SeekBar seekBar) {
-                    int value = Integer.parseInt(String.valueOf(((TextView) (findViewById(R.id.beeps_value))).getText()));
-                    device.WriteCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), CHARACTERISTIC_BEEP, new byte[]{(byte) value});
+                    int value = seekBar.getProgress();
+                    device.WriteCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), CHARACTERISTIC_BEEP, new byte[] { (byte)value });
                 }
             });
             extra.findViewById(R.id.beeps_label).setVisibility(View.VISIBLE);
+            extra.findViewById(R.id.beeps_slider).setVisibility(View.VISIBLE);
         }
         if (device.HasCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), CHARACTERISTIC_BRIGHTNESS))
         {
@@ -359,7 +319,7 @@ public class SyncClockActivity extends BluetoothActivity
             seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {
-                    SetProgress(seekBar, (TextView) findViewById(R.id.brightness_value), progress);
+                    SetProgress(getResources(), seekBar, m_BrightnessThumb, progress);
                 }
 
                 @Override
@@ -369,28 +329,24 @@ public class SyncClockActivity extends BluetoothActivity
 
                 @Override
                 public void onStopTrackingTouch(SeekBar seekBar) {
-                    int value = Integer.parseInt(String.valueOf(((TextView)(findViewById(R.id.brightness_value))).getText()));
+                    int value = seekBar.getProgress();
                     device.WriteCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), CHARACTERISTIC_BRIGHTNESS, new byte[] { (byte)value });
                 }
             });
             extra.findViewById(R.id.brightness_label).setVisibility(View.VISIBLE);
+            extra.findViewById(R.id.brightness_slider).setVisibility(View.VISIBLE);
         }
 
         m_DeviceSelectView.SetExtra(device.GetAddress(), extra);
     }
 
-    private static void SetProgress(SeekBar seekBar, TextView label, int progress) {
-        label.setText(String.valueOf(progress));
-
-        int width = seekBar.getWidth() - seekBar.getPaddingLeft() - seekBar.getPaddingRight();
-        int seekerPosition = seekBar.getPaddingLeft() + width * seekBar.getProgress() / (seekBar.getMax() - seekBar.getMin() - 1);
-
-        label.measure(0, 0);
-        int measuredWidth = label.getMeasuredWidth();
-        int delta = measuredWidth / 2;
-        label.setX(seekBar.getX() + seekerPosition - delta);
-
-        seekBar.setVisibility(View.VISIBLE);
-        label.setVisibility(View.VISIBLE);
+    private static void SetProgress(Resources resources, SeekBar seekBar, View thumb, int progress) {
+        ((TextView)thumb.findViewById(R.id.progress)).setText(String.valueOf(progress));
+        thumb.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        Bitmap bitmap = Bitmap.createBitmap(thumb.getMeasuredWidth(), thumb.getMeasuredHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        thumb.layout(0, 0, thumb.getMeasuredWidth(), thumb.getMeasuredHeight());
+        thumb.draw(canvas);
+        seekBar.setThumb(new BitmapDrawable(resources, bitmap));
     }
 }

@@ -29,4 +29,9 @@
         <item name="android:textColorPrimary">@color/BezBlue</item>
         <item name="android:textColorSecondary">@color/Accent</item>
     </style>
+
+    <style name="BezSeekBar" parent="Widget.AppCompat.SeekBar.Discrete">
+        <item name="android:progressBackgroundTint">@color/SoftBlue</item>
+        <item name="android:progressTint">@color/BezBlue</item>
+    </style>
 </resources>

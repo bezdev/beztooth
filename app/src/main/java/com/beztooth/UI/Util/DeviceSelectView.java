@@ -77,7 +77,7 @@ public class DeviceSelectView
         // Make clickable and set onClick event handler.
         BezContainer container = view.findViewById(R.id.device_select_container);
         container.setTag(address);
-        container.SetOnClick(onClick);
+        if (onClick != null) container.SetOnClick(onClick);
 
         if (!deviceExists || !m_ReplaceIfExists) {
             m_DeviceSelectViews.put(address, container);
