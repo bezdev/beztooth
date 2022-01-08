@@ -41,6 +41,24 @@
         android:layout_marginStart="20dp"
         android:textSize="18sp"
         android:visibility="gone" />
+    <com.beztooth.UI.Util.BezButton
+        android:id="@+id/interval_timer_action"
+        android:background="@drawable/select_border_medium"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textStyle="bold"
+        android:textColor="@color/BezBlue"
+        android:visibility="gone"
+        android:text="@string/interval_timer" />
+    <TextView
+        android:id="@+id/interval_timer_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="20dp"
+        android:textSize="18sp"
+        android:visibility="gone" />
     <TextView
         android:id="@+id/beeps_label"
         android:layout_width="wrap_content"

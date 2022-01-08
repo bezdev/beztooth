@@ -174,7 +174,12 @@ public class Util
         return "";
     }
 
-    public static Date GetDataFromData(byte[] data)
+    public static byte[] GetByteArrayFromInteger(int value, int bytes)
+    {
+        return ByteBuffer.allocate(bytes).order(ByteOrder.LITTLE_ENDIAN).putInt(value).array();
+    }
+
+    public static Date GetDateFromData(byte[] data)
     {
         try
         {

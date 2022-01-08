@@ -332,7 +332,7 @@ public class KimchiActivity extends BluetoothActivity
     {
         if (characteristic.equalsIgnoreCase(Constants.AddBaseUUID(Constants.CHARACTERISTIC_CURRENT_TIME.UUID)))
         {
-            m_StartDate = Util.GetDataFromData(data);
+            m_StartDate = Util.GetDateFromData(data);
         }
         else if (characteristic.equalsIgnoreCase(Constants.KIMCHI_V1_SENSOR_DATA.UUID))
         {

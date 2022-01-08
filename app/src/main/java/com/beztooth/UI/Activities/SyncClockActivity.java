@@ -1,8 +1,10 @@
 package com.beztooth.UI.Activities;
 
+import android.app.AlertDialog;
 import android.app.TimePickerDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
@@ -12,7 +14,9 @@ import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
@@ -35,12 +39,13 @@ public class SyncClockActivity extends BluetoothActivity
     private static final String TAG = "SyncClockActivity";
     private static final String CLOCK_DEVICE_PREFIX = "Clock";
 
-    private static final String CHARACTERISTIC_BEEP = "7dfe97ac-69d9-4dd4-8d19-7bfe753f1fed";
     private static final String CHARACTERISTIC_BRIGHTNESS = "7dfe97ac-69d9-4dd4-8d19-7bfe753f1fee";
+    private static final String CHARACTERISTIC_BEEP = "7dfe97ac-69d9-4dd4-8d19-7bfe753f1fed";
+    private static final String CHARACTERISTIC_INTERVAL_TIMER = "7dfe97ac-69d9-4dd4-8d19-7bfe753f1fef";
 
     private static final int BEEP_COUNT_MIN = 1;
     private static final int BEEP_COUNT_MAX = 10;
-    private static final int BRIGHTNESS_MIN = 2;
+    private static final int BRIGHTNESS_MIN = 0;
     private static final int BRIGHTNESS_MAX = 20;
 
     private ProgressBar m_ScanProgress;
@@ -107,6 +112,13 @@ public class SyncClockActivity extends BluetoothActivity
                         alarmLabel.setText(String.valueOf(data[0]) + String.valueOf(data[1]) + ":" + String.valueOf(data[2]) + String.valueOf(data[3]));
                     }
                 }
+                if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(CHARACTERISTIC_INTERVAL_TIMER))
+                {
+                    String address = intent.getStringExtra(ConnectionManager.ADDRESS);
+                    TextView intervalTimerLabel = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.interval_timer_label);
+                    intervalTimerLabel.setText(Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.INTEGER));
+                    intervalTimerLabel.setVisibility(View.VISIBLE);
+                }
                 if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(CHARACTERISTIC_BEEP))
                 {
                     String address = intent.getStringExtra(ConnectionManager.ADDRESS);
@@ -130,6 +142,7 @@ public class SyncClockActivity extends BluetoothActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sync_clock);
 
+        // Initialize views
         m_DeviceSelectView = new DeviceSelectView(getApplicationContext(), (LinearLayout)findViewById(R.id.device_scroll));
         m_BeepsThumb = m_LayoutInflater.inflate(R.layout.seekbar_thumb, null, false);
         m_BrightnessThumb = m_LayoutInflater.inflate(R.layout.seekbar_thumb, null, false);
@@ -335,6 +348,47 @@ public class SyncClockActivity extends BluetoothActivity
             });
             extra.findViewById(R.id.brightness_label).setVisibility(View.VISIBLE);
             extra.findViewById(R.id.brightness_slider).setVisibility(View.VISIBLE);
+        }
+        if (device.HasCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), CHARACTERISTIC_INTERVAL_TIMER))
+        {
+            // Initialize Interval Timer dialog
+            final AlertDialog.Builder intervalTimerDialogBuilder = new AlertDialog.Builder(SyncClockActivity.this);
+            intervalTimerDialogBuilder.setTitle("Interval Timer");
+            View viewInflated = m_LayoutInflater.inflate(R.layout.interval_timer_dialog, (ViewGroup) findViewById(android.R.id.content), false);
+            final EditText intervalSecondsInput = (EditText) viewInflated.findViewById(R.id.seconds);
+            intervalTimerDialogBuilder.setView(viewInflated);
+
+            intervalTimerDialogBuilder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                    String text = String.valueOf(intervalSecondsInput.getText());
+                    if (text.isEmpty()) return;
+
+                    int seconds = Integer.parseInt(text);
+                    device.WriteCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), CHARACTERISTIC_INTERVAL_TIMER, Util.GetByteArrayFromInteger(seconds, 4));
+                    device.ReadCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), CHARACTERISTIC_INTERVAL_TIMER);
+                }
+            });
+            intervalTimerDialogBuilder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+            final AlertDialog intervalTimerDialog = intervalTimerDialogBuilder.create();
+
+            BezButton button = extra.findViewById(R.id.interval_timer_action);
+            button.SetOnClick(new ViewInputHandler.OnClick()
+            {
+                @Override
+                public void Do(View view)
+                {
+                    intervalSecondsInput.setText("");
+                    intervalTimerDialog.show();
+                }
+            });
+            button.setVisibility(View.VISIBLE);
         }
 
         m_DeviceSelectView.SetExtra(device.GetAddress(), extra);
