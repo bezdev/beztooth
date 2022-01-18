@@ -53,88 +53,83 @@ public class SyncClockActivity extends BluetoothActivity
     private View m_BeepsThumb;
     private View m_BrightnessThumb;
 
-    private BroadcastReceiver m_BroadcastReceiver = new BroadcastReceiver()
-    {
-        @Override
-        public void onReceive(Context context, Intent intent)
+    protected void OnBroadcastEvent(Intent intent) {
+        String action = intent.getAction();
+
+        if (action.equals(ConnectionManager.ON_SCAN_STARTED))
         {
-            String action = intent.getAction();
+            m_ScanProgress.setVisibility(View.VISIBLE);
+        }
+        else if (action.equals(ConnectionManager.ON_SCAN_STOPPED))
+        {
+            m_ScanProgress.setVisibility(View.GONE);
+        }
+        else if (action.equals(ConnectionManager.ON_DEVICE_SCANNED))
+        {
+            AddDevice(intent.getStringExtra(ConnectionManager.ADDRESS));
+        }
+        else if (action.equals(ConnectionManager.ON_SERVICES_DISCOVERED))
+        {
+            final ConnectionManager.Device device = m_ConnectionManager.GetDevice(intent.getStringExtra(ConnectionManager.ADDRESS));
+            if (device == null) return;
 
-            if (action.equals(ConnectionManager.ON_SCAN_STARTED))
-            {
-                m_ScanProgress.setVisibility(View.VISIBLE);
-            }
-            else if (action.equals(ConnectionManager.ON_SCAN_STOPPED))
-            {
-                m_ScanProgress.setVisibility(View.GONE);
-            }
-            else if (action.equals(ConnectionManager.ON_DEVICE_SCANNED))
-            {
-                AddDevice(intent.getStringExtra(ConnectionManager.ADDRESS));
-            }
-            else if (action.equals(ConnectionManager.ON_SERVICES_DISCOVERED))
-            {
-                final ConnectionManager.Device device = m_ConnectionManager.GetDevice(intent.getStringExtra(ConnectionManager.ADDRESS));
-                if (device == null) return;
-
-                AddExtra(device);
-            }
-            else if (action.equals(ConnectionManager.ON_DEVICE_CONNECTED))
-            {
-                m_DeviceSelectView.OnDeviceConnectionStatusChanged(intent.getStringExtra(ConnectionManager.ADDRESS), true, false);
-            }
-            else if (action.equals(ConnectionManager.ON_DEVICE_DISCONNECTED))
+            AddExtra(device);
+        }
+        else if (action.equals(ConnectionManager.ON_DEVICE_CONNECTED))
+        {
+            m_DeviceSelectView.OnDeviceConnectionStatusChanged(intent.getStringExtra(ConnectionManager.ADDRESS), true, false);
+        }
+        else if (action.equals(ConnectionManager.ON_DEVICE_DISCONNECTED))
+        {
+            String address = intent.getStringExtra(ConnectionManager.ADDRESS);
+            m_DeviceSelectView.OnDeviceConnectionStatusChanged(address, false, intent.getBooleanExtra(ConnectionManager.DATA, false));
+            m_DeviceSelectView.SetDeviceSelectState(address, true);
+        }
+        else if (action.equals(ConnectionManager.ON_CHARACTERISTIC_READ))
+        {
+            if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID()))
             {
                 String address = intent.getStringExtra(ConnectionManager.ADDRESS);
-                m_DeviceSelectView.OnDeviceConnectionStatusChanged(address, false, intent.getBooleanExtra(ConnectionManager.DATA, false));
-                m_DeviceSelectView.SetDeviceSelectState(address, true);
+                TextView timeLabel = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.time_label);
+                timeLabel.setText(Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.TIME));
             }
-            else if (action.equals(ConnectionManager.ON_CHARACTERISTIC_READ))
+            if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(Constants.CHARACTERISTIC_REFERENCE_TIME.GetFullUUID()))
             {
-                if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID()))
-                {
-                    String address = intent.getStringExtra(ConnectionManager.ADDRESS);
-                    TextView timeLabel = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.time_label);
-                    timeLabel.setText(Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.TIME));
-                }
-                if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(Constants.CHARACTERISTIC_REFERENCE_TIME.GetFullUUID()))
-                {
-                    String address = intent.getStringExtra(ConnectionManager.ADDRESS);
-                    TextView alarmLabel = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.alarm_label);
-                    byte[] data = intent.getByteArrayExtra(ConnectionManager.DATA);
-                    if (data.length != 4) return;
+                String address = intent.getStringExtra(ConnectionManager.ADDRESS);
+                TextView alarmLabel = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.alarm_label);
+                byte[] data = intent.getByteArrayExtra(ConnectionManager.DATA);
+                if (data.length != 4) return;
 
-                    if (data[0] == 2 && data[1] == 4 && data[2] == 0 && data[3] == 0) {
-                        alarmLabel.setText("NOT SET");
-                    }
-                    else
-                    {
-                        alarmLabel.setText(String.valueOf(data[0]) + String.valueOf(data[1]) + ":" + String.valueOf(data[2]) + String.valueOf(data[3]));
-                    }
+                if (data[0] == 2 && data[1] == 4 && data[2] == 0 && data[3] == 0) {
+                    alarmLabel.setText("NOT SET");
                 }
-                if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(CHARACTERISTIC_INTERVAL_TIMER))
+                else
                 {
-                    String address = intent.getStringExtra(ConnectionManager.ADDRESS);
-                    TextView intervalTimerLabel = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.interval_timer_label);
-                    intervalTimerLabel.setText(Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.INTEGER));
-                    intervalTimerLabel.setVisibility(View.VISIBLE);
+                    alarmLabel.setText(String.valueOf(data[0]) + String.valueOf(data[1]) + ":" + String.valueOf(data[2]) + String.valueOf(data[3]));
                 }
-                if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(CHARACTERISTIC_BEEP))
-                {
-                    String address = intent.getStringExtra(ConnectionManager.ADDRESS);
-                    SeekBar seekBar = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.beeps_slider);
-                    seekBar.setProgress(intent.getByteArrayExtra(ConnectionManager.DATA)[0]);
+            }
+            if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(CHARACTERISTIC_INTERVAL_TIMER))
+            {
+                String address = intent.getStringExtra(ConnectionManager.ADDRESS);
+                TextView intervalTimerLabel = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.interval_timer_label);
+                intervalTimerLabel.setText(Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.INTEGER));
+                intervalTimerLabel.setVisibility(View.VISIBLE);
+            }
+            if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(CHARACTERISTIC_BEEP))
+            {
+                String address = intent.getStringExtra(ConnectionManager.ADDRESS);
+                SeekBar seekBar = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.beeps_slider);
+                seekBar.setProgress(intent.getByteArrayExtra(ConnectionManager.DATA)[0]);
 
-                }
-                if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(CHARACTERISTIC_BRIGHTNESS))
-                {
-                    String address = intent.getStringExtra(ConnectionManager.ADDRESS);
-                    SeekBar seekBar = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.brightness_slider);
-                    seekBar.setProgress(intent.getByteArrayExtra(ConnectionManager.DATA)[0]);
-                }
+            }
+            if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(CHARACTERISTIC_BRIGHTNESS))
+            {
+                String address = intent.getStringExtra(ConnectionManager.ADDRESS);
+                SeekBar seekBar = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.brightness_slider);
+                seekBar.setProgress(intent.getByteArrayExtra(ConnectionManager.DATA)[0]);
             }
         }
-    };
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -168,13 +163,14 @@ public class SyncClockActivity extends BluetoothActivity
     @Override
     protected void onDestroy()
     {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(m_BroadcastReceiver);
         super.onDestroy();
     }
 
     @Override
     protected void OnConnectionManagerConnected()
     {
+        super.OnConnectionManagerConnected();
+
         if (m_ConnectionManager.IsScanning())
         {
             for (String mac : m_ConnectionManager.GetScannedDevices())
@@ -182,17 +178,6 @@ public class SyncClockActivity extends BluetoothActivity
                 AddDevice(mac);
             }
         }
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(ConnectionManager.ON_SCAN_STARTED);
-        intentFilter.addAction(ConnectionManager.ON_SCAN_STOPPED);
-        intentFilter.addAction(ConnectionManager.ON_DEVICE_SCANNED);
-        intentFilter.addAction(ConnectionManager.ON_DEVICE_CONNECTED);
-        intentFilter.addAction(ConnectionManager.ON_DEVICE_DISCONNECTED);
-        intentFilter.addAction(ConnectionManager.ON_SERVICES_DISCOVERED);
-        intentFilter.addAction(ConnectionManager.ON_CHARACTERISTIC_WRITE);
-        intentFilter.addAction(ConnectionManager.ON_CHARACTERISTIC_READ);
-        LocalBroadcastManager.getInstance(this).registerReceiver(m_BroadcastReceiver, intentFilter);
 
         Scan();
     }
