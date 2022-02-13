@@ -170,6 +170,12 @@ public class Util
 
             return String.format(Locale.getDefault(), "%02d/%02d/%d %02d:%02d:%02d", data[2], data[3], year, data[4], data[5], data[6]);
         }
+        else if (type == Constants.CharacteristicReadType.TIME_HMS)
+        {
+            if (data.length != 3) return "";
+
+            return String.format(Locale.getDefault(), "%02d:%02d:%02d", data[0], data[1], data[2]);
+        }
 
         return "";
     }

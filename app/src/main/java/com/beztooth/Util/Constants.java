@@ -13,7 +13,8 @@ public class Constants {
         HEX,
         INTEGER,
         TIME,
-        CUSTOM
+        TIME_HMS,
+        CUSTOM,
     }
 
     private static HashMap<String, String> services = new HashMap<>();
@@ -334,6 +335,12 @@ public class Constants {
     public static final UUIDNamePair KIMCHI_V1_SENSOR_SERVICE = new UUIDNamePair("29a79111-cc0d-42b2-b545-dac14f3da422", "Sensor Data Service");
     public static final UUIDNamePair KIMCHI_V1_SENSOR_DATA = new UUIDNamePair("25353214-b080-48b7-bb96-2a49af082dbc", "Sensor Data");
     public static final UUIDNamePair KIMCHI_V1_ALL_SENSOR_DATA = new UUIDNamePair("8e8b58b3-7e23-42d9-805f-2d5e6b7bec64", "All Sensor Data");
+    public static final UUIDNamePair SUN_CALCULATOR_SERVICE = new UUIDNamePair("53a2deba-b1cf-43c0-afd8-0cf8172ae3cb", "Sun Service");
+    public static final UUIDNamePair SUN_CALCULATOR_LUX_VALUE_CHARACTERISTIC = new UUIDNamePair("d94b3f32-3d22-485c-b244-3dfac9d705d1", "Lux Value");
+    public static final UUIDNamePair SUN_CALCULATOR_MEASURE_TIME_CHARACTERISTIC = new UUIDNamePair("d94b3f32-3d22-485c-b244-3dfac9d705d2", "Measure Time");
+    public static final UUIDNamePair SUN_CALCULATOR_SUN_COUNT_CHARACTERISTIC = new UUIDNamePair("d94b3f32-3d22-485c-b244-3dfac9d705d3", "Sun Count");
+    public static final UUIDNamePair SUN_CALCULATOR_SUN_THRESHOLD_CHARACTERISTIC = new UUIDNamePair("d94b3f32-3d22-485c-b244-3dfac9d705d4", "Sun Threshold");
+
 
     public static final Device LEO_SERVER_V1 =
         new Device("00:0B:57:1A:88:EF", "LEO SERVER V1", new ArrayList<Service>() {{
@@ -366,12 +373,23 @@ public class Constants {
             }}));
         }});
 
+    public static final Device SUN_CALCULATOR =
+            new Device("CC:86:EC:61:3D:25", "Sun Calculator", new ArrayList<Service>() {{
+                add(new Service(SUN_CALCULATOR_SERVICE, new ArrayList<Characteristic>() {{
+                    add(new Characteristic(SUN_CALCULATOR_LUX_VALUE_CHARACTERISTIC, CharacteristicReadType.INTEGER));
+                    add(new Characteristic(SUN_CALCULATOR_MEASURE_TIME_CHARACTERISTIC, CharacteristicReadType.TIME_HMS));
+                    add(new Characteristic(SUN_CALCULATOR_SUN_COUNT_CHARACTERISTIC, CharacteristicReadType.INTEGER));
+                    add(new Characteristic(SUN_CALCULATOR_SUN_THRESHOLD_CHARACTERISTIC, CharacteristicReadType.INTEGER));
+                }}));
+            }});
+
     static
     {
         devices.add(LEO_SERVER_V1);
         devices.add(LEO_SERVER_V2);
         devices.add(KIMCHI_V1);
         devices.add(KIMCHI_V2);
+        devices.add(SUN_CALCULATOR);
     }
 
     public static class UUIDNamePair

@@ -210,7 +210,7 @@ public class ConnectionManager extends Service
                 super.Do();
 
                 m_ConnectTime = System.currentTimeMillis();
-                m_Gatt = m_Device.connectGatt(m_Context, true, c_BluetoothGattCallback);
+                m_Gatt = m_Device.connectGatt(m_Context, true, c_BluetoothGattCallback, BluetoothDevice.TRANSPORT_LE);
                 m_IsConnecting = true;
             }
 
