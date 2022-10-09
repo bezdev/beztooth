@@ -34,7 +34,8 @@ public class Beztooth extends BluetoothActivity
         new Activity(R.string.sync_clock, SyncClockActivity.class),
         new Activity(R.string.thermometer, ThermometerActivity.class),
         new Activity(R.string.garage_door, GarageDoorActivity.class),
-        new Activity(R.string.kimchi, KimchiActivity.class)
+        new Activity(R.string.kimchi, KimchiActivity.class),
+        new Activity(R.string.counters, CounterActivity.class)
     };
 
     // MAIN

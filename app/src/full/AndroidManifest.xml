@@ -17,5 +17,6 @@
         <activity android:name="com.beztooth.UI.Activities.ThermometerActivity" />
         <activity android:name="com.beztooth.UI.Activities.GarageDoorActivity" />
         <activity android:name="com.beztooth.UI.Activities.KimchiActivity" />
+        <activity android:name="com.beztooth.UI.Activities.CounterActivity" />
     </application>
 </manifest>
