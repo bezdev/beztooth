@@ -180,15 +180,18 @@ public class DeviceActivity extends BluetoothActivity
         serviceView.setTag(serviceUUID);
 
         TextView serviceNameView = serviceView.findViewById(R.id.service_name);
-        serviceNameView.setText(serviceName == null ? serviceUUID : serviceName);
         TextView serviceUUIDView = serviceView.findViewById(R.id.service_uuid);
-        // Show uuid only if there is a service name, otherwise the name will be the uuid.
+
+        // Show uuid only if there is a service name, otherwise the name will be the UUID.
         if (serviceName != null)
         {
+            serviceNameView.setText(serviceName);
             serviceUUIDView.setText(serviceUUID);
         }
         else
         {
+            serviceNameView.setText(serviceUUID);
+            Util.SetTextViewBoldMonospace(serviceNameView);
             serviceUUIDView.setVisibility(View.GONE);
         }
 
@@ -205,19 +208,21 @@ public class DeviceActivity extends BluetoothActivity
         Constants.Characteristic characteristicConstant = Constants.Characteristics.Get(m_Address, serviceUUID, characteristicUUID);
         String characteristicName = characteristicConstant == null ? null : characteristicConstant.Name;
 
-        // Characteristic layout shows text for both characteristic name and uuid.  If there is no characteristic name, only display the uuid.
+        // Characteristic layout shows text for both characteristic name and uuid.  If there is no characteristic name, only display the UUID.
         View characteristicView = m_LayoutInflater.inflate(R.layout.characteristic_select, null);
         characteristicView.setTag(characteristicUUID);
         TextView characteristicNameView = characteristicView.findViewById(R.id.characteristic_name);
-        characteristicNameView.setText(characteristicName == null ? characteristicUUID : characteristicName);
         TextView characteristicUUIDView = characteristicView.findViewById(R.id.characteristic_uuid);
-        // Characteristic uuid only if there is a characteristic name, otherwise the name will be the uuid.
+        // Characteristic uuid only if there is a characteristic name, otherwise the name will be the UUID.
         if (characteristicName != null)
         {
+            characteristicNameView.setText(characteristicName);
             characteristicUUIDView.setText(characteristicUUID);
         }
         else
         {
+            characteristicNameView.setText(characteristicUUID);
+            Util.SetTextViewBoldMonospace(characteristicNameView);
             characteristicUUIDView.setVisibility(View.GONE);
         }
 
@@ -331,8 +336,8 @@ public class DeviceActivity extends BluetoothActivity
 
     private class CharacteristicActionOnClick implements ViewInputHandler.OnClick
     {
-        private String m_ServiceUUID;
-        private String m_CharacteristicUUID;
+        private final String m_ServiceUUID;
+        private final String m_CharacteristicUUID;
         private boolean m_IsNotifyEnabled;
         private boolean m_IsIndicateEnabled;
 

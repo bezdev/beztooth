@@ -23,14 +23,14 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_columnSpan="1"
+                android:layout_columnSpan="2"
                 android:textSize="24sp"
-                android:text="Counter 1:" />
+                android:text="Counter 1" />
             <TextView
                 android:id="@+id/counterOneValue"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_columnSpan="1"
+                android:layout_columnSpan="2"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:textColor="@color/PrimaryDark" />
@@ -55,14 +55,14 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_columnSpan="1"
+                android:layout_columnSpan="2"
                 android:textSize="24sp"
-                android:text="Counter 2:" />
+                android:text="Counter 2" />
             <TextView
                 android:id="@+id/counterTwoValue"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_columnSpan="1"
+                android:layout_columnSpan="2"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:textColor="@color/PrimaryDark" />

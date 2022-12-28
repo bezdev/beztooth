@@ -159,6 +159,7 @@ public class DeviceSelectView
 
         View view = m_DeviceSelectViews.get(address);
         LinearLayout insertPoint = view.findViewById(R.id.device_select_extra);
+        insertPoint.removeAllViews();
         insertPoint.addView(extraView);
     }
 

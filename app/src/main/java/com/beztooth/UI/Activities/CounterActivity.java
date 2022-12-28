@@ -1,23 +1,12 @@
 package com.beztooth.UI.Activities;
 
-import android.app.AlertDialog;
-import android.app.TimePickerDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
-import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.TimePicker;
 
 import com.beztooth.Bluetooth.ConnectionManager;
 import com.beztooth.R;
@@ -27,13 +16,13 @@ import com.beztooth.UI.Util.ViewInputHandler;
 import com.beztooth.Util.Constants;
 import com.beztooth.Util.Util;
 
-import java.util.Calendar;
-import java.util.Locale;
+import java.util.Arrays;
+
 
 public class CounterActivity extends BluetoothActivity
 {
     private static final String TAG = "CounterActivity";
-    private static final String COUNTER_DEVICE_PREFIX = "Sergei";
+    private static final String[] COUNTER_DEVICE_MACS = new String[] { "60:A4:23:D4:5E:49" };
 
     private static final String COUNTER_SERVICE = "046f72a4-4e37-4a70-a825-c21f257cde16";
     private static final String COUNTER_ONE_CHARACTERISTIC = "046f72a4-4e37-4a70-a825-c21f257cde17";
@@ -81,13 +70,15 @@ public class CounterActivity extends BluetoothActivity
             {
                 String address = intent.getStringExtra(ConnectionManager.ADDRESS);
                 TextView counterOneValue = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.counterOneValue);
-                counterOneValue.setText(Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.TIME));
+                int seconds = Integer.parseInt(Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.INTEGER));
+                counterOneValue.setText(Util.GetTimeFromSeconds(seconds));
             }
             else if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(COUNTER_TWO_CHARACTERISTIC))
             {
                 String address = intent.getStringExtra(ConnectionManager.ADDRESS);
                 TextView counterTwoValue = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.counterTwoValue);
-                counterTwoValue.setText(Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.TIME));
+                int seconds = Integer.parseInt(Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.INTEGER));
+                counterTwoValue.setText(Util.GetTimeFromSeconds(seconds));
             }
         }
     }
@@ -96,7 +87,7 @@ public class CounterActivity extends BluetoothActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_sync_clock);
+        setContentView(R.layout.activity_counter);
 
         // Initialize views
         m_DeviceSelectView = new DeviceSelectView(getApplicationContext(), (LinearLayout)findViewById(R.id.device_scroll));
@@ -172,7 +163,9 @@ public class CounterActivity extends BluetoothActivity
         ConnectionManager.Device device = m_ConnectionManager.GetDevice(address);
         if (device == null) return;
 
-        if (!device.GetName().startsWith(COUNTER_DEVICE_PREFIX)) return;
+        if (!Arrays.asList(COUNTER_DEVICE_MACS).contains(device.GetAddress())) {
+            return;
+        }
 
         m_DeviceSelectView.AddDevice(device.GetName(), device.GetAddress(), null);
 
@@ -181,7 +174,7 @@ public class CounterActivity extends BluetoothActivity
 
     private void AddExtra(final ConnectionManager.Device device)
     {
-        View extra = m_LayoutInflater.inflate(R.layout.counter_select, null);
+        View extra = m_LayoutInflater.inflate(R.layout.counter_extra, null);
 
         BezButton counterOneResetButton = extra.findViewById(R.id.counterOneReset);
         counterOneResetButton.SetOnClick(new ViewInputHandler.OnClick() {

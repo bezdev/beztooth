@@ -1,7 +1,9 @@
 package com.beztooth.Util;
 
+import android.graphics.Typeface;
 import android.util.DisplayMetrics;
 import android.view.WindowManager;
+import android.widget.TextView;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -160,7 +162,10 @@ public class Util
         }
         else if (type == Constants.CharacteristicReadType.INTEGER)
         {
-            return "" + ByteBuffer.allocate(4).put(data).order(ByteOrder.LITTLE_ENDIAN).getInt(0);
+            String result = "" + ByteBuffer.allocate(4).put(data).order(ByteOrder.LITTLE_ENDIAN).getInt(0);
+            if (result.isEmpty()) return "0";
+
+            return result;
         }
         else if (type == Constants.CharacteristicReadType.TIME)
         {
@@ -198,6 +203,19 @@ public class Util
         }
     }
 
+    public static String GetTimeFromSeconds(int time) {
+        int seconds = time % 60;
+        int minutes = (time % (60 * 60)) / 60;
+        int hours = (time / (60 * 60)) % 24;
+        int days = time / (60 * 60 * 24);
+
+        String result = String.format("%ds", seconds);
+        if (minutes > 0) result = String.format("%dm:", minutes) + result;
+        if (hours > 0) result = String.format("%dh:", hours) + result;
+        if (days > 0) result = String.format("%dd:", days) + result;
+        return result;
+    }
+
     public static float ConvertPascalToMMHG(float pascal)
     {
         return pascal * MMHG_PER_PA;
@@ -208,5 +226,10 @@ public class Util
         DisplayMetrics displayMetrics = new DisplayMetrics();
         windowManager.getDefaultDisplay().getMetrics(displayMetrics);
         return (int) (pixels * displayMetrics.density);
+    }
+
+    public static void SetTextViewBoldMonospace(TextView textView) {
+        textView.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        textView.setLetterSpacing(-.1f);
     }
 }
