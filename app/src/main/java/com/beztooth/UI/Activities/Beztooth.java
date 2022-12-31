@@ -6,38 +6,55 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.beztooth.Bluetooth.ConnectionManager;
 import com.beztooth.R;
 import com.beztooth.UI.Util.BezButton;
+import com.beztooth.UI.Util.BezContainer;
 import com.beztooth.UI.Util.ViewInputHandler;
 import com.beztooth.Util.Util;
 
 public class Beztooth extends BluetoothActivity
 {
-    private class Activity
+    private class SelectActivity
     {
         public int Name;
         public Class Class;
 
-        public Activity(int name, Class className)
+        public SelectActivity(int name, Class className)
         {
             Name = name;
             Class = className;
         }
     }
 
-    Activity[] ACTIVITIES = new Activity[]
+    private class ImageActivity extends SelectActivity {
+        public int Image;
+
+        public ImageActivity(int name, Class className, int image)
+        {
+            super(name, className);
+            Image = image;
+        }
+    }
+
+    SelectActivity[] SELECT_ACTIVITIES = new SelectActivity[]
     {
-        new Activity(R.string.scan, DevicesActivity.class),
-        new Activity(R.string.sync_clock, SyncClockActivity.class),
-        new Activity(R.string.thermometer, ThermometerActivity.class),
-        new Activity(R.string.garage_door, GarageDoorActivity.class),
-        new Activity(R.string.kimchi, KimchiActivity.class),
-        new Activity(R.string.counters, CounterActivity.class)
+        new SelectActivity(R.string.scan, DevicesActivity.class),
     };
 
+    ImageActivity[] IMAGE_ACTIVITIES = new ImageActivity[]
+    {
+        new ImageActivity(R.string.temperature, ThermometerActivity.class, R.drawable.ic_launcher_thermometer),
+        new ImageActivity(R.string.sync_clock, SyncClockActivity.class, R.drawable.ic_launcher_sync_clock),
+        new ImageActivity(R.string.garage_door, GarageDoorActivity.class, R.mipmap.ic_launcher_garage_door),
+        new ImageActivity(R.string.kimchi, KimchiActivity.class, R.drawable.ic_launcher_kimchi),
+        new ImageActivity(R.string.counter, CounterActivity.class, R.drawable.ic_launcher_counter),
+    };
     // MAIN
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -60,8 +77,7 @@ public class Beztooth extends BluetoothActivity
     private void AddButtons()
     {
         LinearLayout parent = (LinearLayout) findViewById(R.id.activity_scroll);
-
-        for (Activity activity : ACTIVITIES)
+        for (SelectActivity activity : SELECT_ACTIVITIES)
         {
             LayoutInflater inflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             BezButton view = (BezButton) inflater.inflate(R.layout.activity_select, null);
@@ -70,6 +86,7 @@ public class Beztooth extends BluetoothActivity
             layoutParams.topMargin = margin;
             layoutParams.leftMargin = margin;
             layoutParams.rightMargin = margin;
+            layoutParams.bottomMargin = margin;
             view.setLayoutParams(layoutParams);
 
             final Class finalClass = activity.Class;
@@ -85,6 +102,39 @@ public class Beztooth extends BluetoothActivity
             });
 
             parent.addView(view);
+        }
+
+        GridLayout grid = findViewById(R.id.activity_grid);
+        for (ImageActivity activity : IMAGE_ACTIVITIES)
+        {
+            BezContainer activitySelect = (BezContainer) m_LayoutInflater.inflate(R.layout.activity_select_image, null);
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            int margin = Util.PixelToDP(getWindowManager(), 5);
+            int size = Util.PixelToDP(getWindowManager(), 100);
+            layoutParams.topMargin = margin;
+            layoutParams.leftMargin = margin;
+            layoutParams.rightMargin = margin;
+            layoutParams.bottomMargin = margin;
+            layoutParams.height = size;
+            layoutParams.width = size;
+            activitySelect.setLayoutParams(layoutParams);
+            ImageView image = activitySelect.findViewById(R.id.select_image);
+            image.setImageResource(activity.Image);
+            TextView text = activitySelect.findViewById(R.id.select_text);
+            text.setText(activity.Name);
+
+            final Class finalClass = activity.Class;
+            activitySelect.SetOnClick(new ViewInputHandler.OnClick()
+            {
+                @Override
+                public void Do(View view)
+                {
+                    Intent intent = new Intent(view.getContext(), finalClass);
+                    view.getContext().startActivity(intent);
+                }
+            });
+
+            grid.addView(activitySelect);
         }
     }
 }

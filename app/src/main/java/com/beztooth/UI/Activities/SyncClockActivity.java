@@ -90,8 +90,11 @@ public class SyncClockActivity extends BluetoothActivity
             if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID()))
             {
                 String address = intent.getStringExtra(ConnectionManager.ADDRESS);
+                TextView dateLabel = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.date_label);
                 TextView timeLabel = m_DeviceSelectView.GetRoot().findViewWithTag(address).findViewById(R.id.time_label);
-                timeLabel.setText(Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.TIME));
+                String[] timeSplit = Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.TIME).split(" ");
+                dateLabel.setText(timeSplit[0]);
+                timeLabel.setText(timeSplit[1]);
             }
             if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(Constants.CHARACTERISTIC_REFERENCE_TIME.GetFullUUID()))
             {
@@ -239,7 +242,7 @@ public class SyncClockActivity extends BluetoothActivity
             });
             syncButton.setVisibility(View.VISIBLE);
 
-            TextView label = extra.findViewById(R.id.time_label);
+            LinearLayout label = extra.findViewById(R.id.datetime_layout);
             label.setVisibility(View.VISIBLE);
             device.ReadCharacteristic(Constants.SERVICE_CURRENT_TIME.GetFullUUID(), Constants.CHARACTERISTIC_CURRENT_TIME.GetFullUUID());
         }

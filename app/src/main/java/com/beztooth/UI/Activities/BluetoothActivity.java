@@ -149,6 +149,8 @@ public abstract class BluetoothActivity extends AppCompatActivity
     {
         super.onDestroy();
 
+        // TODO: disconnect connected devices
+
         LocalBroadcastManager.getInstance(this).unregisterReceiver(m_BluetoothReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(m_BroadcastReceiver);
         unbindService(m_ConnectionManagerConnection);

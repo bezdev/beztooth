@@ -41,6 +41,12 @@ android {
             applicationIdSuffix ".garagedoor"
             versionNameSuffix "-garagedoor"
         }
+
+        counter {
+            dimension "version"
+            applicationIdSuffix ".counter"
+            versionNameSuffix "-counter"
+        }
     }
 }
 

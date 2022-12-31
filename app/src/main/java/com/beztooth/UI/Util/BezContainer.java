@@ -5,6 +5,8 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.widget.LinearLayout;
 
+import com.beztooth.Util.Logger;
+
 public class BezContainer extends LinearLayout
 {
     private final String TAG = "BezContainer";
@@ -15,18 +17,21 @@ public class BezContainer extends LinearLayout
     public BezContainer(Context context)
     {
         super(context);
+        Logger.Debug(TAG, "BezContainer1");
         Init(context);
     }
 
     public BezContainer(Context context, AttributeSet attrs)
     {
         super(context, attrs);
+        Logger.Debug(TAG, "BezContainer2");
         Init(context);
     }
 
     public BezContainer(Context context, AttributeSet attrs, int defStyleAttr)
     {
         super(context, attrs, defStyleAttr);
+        Logger.Debug(TAG, "BezContainer3");
         Init(context);
     }
 
@@ -40,6 +45,7 @@ public class BezContainer extends LinearLayout
 
     public void SetOnClick(ViewInputHandler.OnClick onClick)
     {
+        Logger.Debug("TAG", "SetOnClick");
         m_InputHandler.SetOnClick(onClick);
     }
 

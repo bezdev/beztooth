@@ -10,26 +10,44 @@
     <com.beztooth.UI.Util.BezButton
         android:id="@+id/sync_clock_action"
         android:background="@drawable/select_border_medium"
-        android:layout_width="wrap_content"
+        android:layout_width="120dp"
         android:layout_height="wrap_content"
         android:textStyle="bold"
+        android:textAlignment="center"
         android:textColor="@color/BezBlue"
         android:visibility="gone"
         android:text="@string/sync_time" />
-    <TextView
-        android:id="@+id/time_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:textSize="18sp"
-        android:visibility="gone" />
+    <LinearLayout
+        android:id="@+id/datetime_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_gravity="start"
+        android:gravity="start"
+        android:visibility="gone">
+        <TextView
+            android:id="@+id/date_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:gravity="start"
+            android:textSize="18sp" />
+        <TextView
+            android:id="@+id/time_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:gravity="start"
+            android:textSize="18sp" />
+    </LinearLayout>
     <com.beztooth.UI.Util.BezButton
         android:id="@+id/set_alarm_action"
         android:background="@drawable/select_border_medium"
-        android:layout_width="wrap_content"
+        android:layout_width="120dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:textStyle="bold"
+        android:textAlignment="center"
         android:textColor="@color/BezBlue"
         android:visibility="gone"
         android:text="@string/set_alarm" />
@@ -44,13 +62,14 @@
     <com.beztooth.UI.Util.BezButton
         android:id="@+id/interval_timer_action"
         android:background="@drawable/select_border_medium"
-        android:layout_width="wrap_content"
+        android:layout_width="120dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:textStyle="bold"
+        android:textAlignment="center"
         android:textColor="@color/BezBlue"
         android:visibility="gone"
-        android:text="@string/interval_timer" />
+        android:text="Timer" />
     <TextView
         android:id="@+id/interval_timer_label"
         android:layout_width="wrap_content"
@@ -72,7 +91,7 @@
         android:id="@+id/beeps_slider"
         style="@style/BezSeekBar"
         android:thumb="@drawable/seekbar_thumb"
-        android:layout_width="180dp"
+        android:layout_width="150dp"
         android:layout_height="wrap_content"
         android:padding="10dp"
         android:visibility="gone" />
@@ -89,7 +108,7 @@
         android:id="@+id/brightness_slider"
         style="@style/BezSeekBar"
         android:thumb="@drawable/seekbar_thumb"
-        android:layout_width="180dp"
+        android:layout_width="150dp"
         android:layout_height="wrap_content"
         android:padding="10dp"
         android:visibility="gone" />

@@ -11,7 +11,7 @@
         android:background="?attr/colorPrimary"
         android:minHeight="?attr/actionBarSize"
         android:theme="?attr/actionBarTheme"
-        app:title="Counters">
+        app:title="@string/counter">
         <Button
             android:id="@+id/toolbarScanButton"
             android:layout_width="wrap_content"

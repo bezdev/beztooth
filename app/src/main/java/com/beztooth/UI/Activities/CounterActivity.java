@@ -53,6 +53,9 @@ public class CounterActivity extends BluetoothActivity
             if (device == null) return;
 
             AddExtra(device);
+
+            device.SetCharacteristicNotification(COUNTER_SERVICE, COUNTER_ONE_CHARACTERISTIC, true);
+            device.SetCharacteristicNotification(COUNTER_SERVICE, COUNTER_TWO_CHARACTERISTIC, true);
         }
         else if (action.equals(ConnectionManager.ON_DEVICE_CONNECTED))
         {
@@ -190,22 +193,6 @@ public class CounterActivity extends BluetoothActivity
             @Override
             public void Do(View view) {
                 device.WriteCharacteristic(COUNTER_SERVICE, CONTROL_CHARACTERISTIC, Util.GetByteArrayFromInteger(2, 4));
-                device.ReadCharacteristic(COUNTER_SERVICE, COUNTER_TWO_CHARACTERISTIC);
-            }
-        });
-
-        BezButton counterOneUpdateButton = extra.findViewById(R.id.counterOneUpdate);
-        counterOneUpdateButton.SetOnClick(new ViewInputHandler.OnClick() {
-            @Override
-            public void Do(View view) {
-                device.ReadCharacteristic(COUNTER_SERVICE, COUNTER_ONE_CHARACTERISTIC);
-            }
-        });
-
-        BezButton counterTwoUpdateButton = extra.findViewById(R.id.counterTwoUpdate);
-        counterTwoUpdateButton.SetOnClick(new ViewInputHandler.OnClick() {
-            @Override
-            public void Do(View view) {
                 device.ReadCharacteristic(COUNTER_SERVICE, COUNTER_TWO_CHARACTERISTIC);
             }
         });

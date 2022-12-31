@@ -18,7 +18,7 @@
     <string name="sync_clock">Sync Clock</string>
     <string name="garage_door">Garage Door</string>
     <string name="kimchi">Kimchi</string>
-    <string name="counters">Counters</string>
+    <string name="counter">Counter</string>
 
     <string name="temperature">Temperature</string>
     <string name="humidity">Humidity</string>

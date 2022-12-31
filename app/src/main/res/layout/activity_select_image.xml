@@ -1,0 +1,30 @@
+<com.beztooth.UI.Util.BezContainer
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/activity_select_image"
+    android:layout_width="100dp"
+    android:layout_height="100dp"
+    android:orientation="vertical"
+    android:background="@drawable/select_border_small">
+    <ImageView
+        android:id="@+id/select_image"
+        android:layout_width="75dp"
+        android:layout_height="75dp"
+        android:layout_gravity="center"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:clickable="false"
+        android:contextClickable="false"
+        android:scaleType="centerInside" />
+    <TextView
+        android:id="@+id/select_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:clickable="false"
+        android:contextClickable="false"
+        android:textAlignment="center"
+        android:textColor="@color/UUIDGray"
+        android:textSize="12dp" />
+</com.beztooth.UI.Util.BezContainer>
