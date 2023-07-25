@@ -54,6 +54,7 @@ public class Beztooth extends BluetoothActivity
         new ImageActivity(R.string.garage_door, GarageDoorActivity.class, R.mipmap.ic_launcher_garage_door),
         new ImageActivity(R.string.kimchi, KimchiActivity.class, R.drawable.ic_launcher_kimchi),
         new ImageActivity(R.string.counter, CounterActivity.class, R.drawable.ic_launcher_counter),
+        new ImageActivity(R.string.marquee, CounterActivity.class, R.drawable.ic_launcher_marquee),
     };
     // MAIN
     @Override

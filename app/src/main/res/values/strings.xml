@@ -19,6 +19,7 @@
     <string name="garage_door">Garage Door</string>
     <string name="kimchi">Kimchi</string>
     <string name="counter">Counter</string>
+    <string name="marquee">Marquee</string>
 
     <string name="temperature">Temperature</string>
     <string name="humidity">Humidity</string>
