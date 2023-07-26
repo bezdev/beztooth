@@ -47,6 +47,12 @@ android {
             applicationIdSuffix ".counter"
             versionNameSuffix "-counter"
         }
+
+        marquee {
+            dimension "version"
+            applicationIdSuffix ".marquee"
+            versionNameSuffix "-marquee"
+        }
     }
 }
 

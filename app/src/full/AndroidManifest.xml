@@ -18,5 +18,6 @@
         <activity android:name="com.beztooth.UI.Activities.GarageDoorActivity" />
         <activity android:name="com.beztooth.UI.Activities.KimchiActivity" />
         <activity android:name="com.beztooth.UI.Activities.CounterActivity" />
+        <activity android:name="com.beztooth.UI.Activities.MarqueeActivity" />
     </application>
 </manifest>
