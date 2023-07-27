@@ -7,12 +7,16 @@ import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.beztooth.Bluetooth.ConnectionManager;
 import com.beztooth.R;
+import com.beztooth.Util.Constants;
+import com.beztooth.Util.Util;
 
 // Marquee device has custom service UUID 5ef12a1f-5c32-4d60-b4d7-b312a37d6adc
 // with 3 characteristics:
@@ -36,10 +40,7 @@ public class MarqueeActivity extends BluetoothActivity
     private static final String CHARACTERISTIC_BRIGHTNESS = "5ef12a1f-5c32-4d60-b4d7-b312a37d6ade";
     private static final String CHARACTERISTIC_SPEED = "5ef12a1f-5c32-4d60-b4d7-b312a37d6adf";
 
-    private static final int BRIGHTNESS_MIN = 0;
-    private static final int BRIGHTNESS_MAX = 5;
-    private static final int SPEED_MIN = 0;
-    private static final int SPEED_MAX = 5;
+    private ConnectionManager.Device m_Device;
 
     private ProgressBar m_ScanProgress;
     private View m_BrightnessThumb;
@@ -58,6 +59,7 @@ public class MarqueeActivity extends BluetoothActivity
         }
         else if (action.equals(ConnectionManager.ON_DEVICE_SCANNED))
         {
+            AddDevice(intent.getStringExtra(ConnectionManager.ADDRESS));
         }
         else if (action.equals(ConnectionManager.ON_SERVICES_DISCOVERED))
         {
@@ -70,6 +72,21 @@ public class MarqueeActivity extends BluetoothActivity
         }
         else if (action.equals(ConnectionManager.ON_CHARACTERISTIC_READ))
         {
+            if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(CHARACTERISTIC_MESSAGE))
+            {
+                EditText editText = findViewById(R.id.message);
+                editText.setText(Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.STRING));
+            }
+            else if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(CHARACTERISTIC_BRIGHTNESS))
+            {
+                SeekBar seekBar = findViewById(R.id.brightness_slider);
+                seekBar.setProgress(intent.getByteArrayExtra(ConnectionManager.DATA)[0]);
+            }
+            else if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(CHARACTERISTIC_SPEED))
+            {
+                SeekBar seekBar = findViewById(R.id.speed_slider);
+                seekBar.setProgress(intent.getByteArrayExtra(ConnectionManager.DATA)[0]);
+            }
         }
     }
 
@@ -81,42 +98,6 @@ public class MarqueeActivity extends BluetoothActivity
 
         m_BrightnessThumb = m_LayoutInflater.inflate(R.layout.seekbar_thumb, null, false);
         m_SpeedThumb = m_LayoutInflater.inflate(R.layout.seekbar_thumb, null, false);
-
-        ((SeekBar)findViewById(R.id.brightness_slider)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {
-                SetProgress(getResources(), seekBar, m_BrightnessThumb, progress);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                int value = seekBar.getProgress();
-                // device.WriteCharacteristic(SERVICE_MARQUEE, CHARACTERISTIC_BRIGHTNESS, new byte[] { (byte)value });
-            }
-        });
-
-        ((SeekBar)findViewById(R.id.speed_slider)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {
-                SetProgress(getResources(), seekBar, m_SpeedThumb, progress);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                int value = seekBar.getProgress();
-                // device.WriteCharacteristic(SERVICE_MARQUEE, CHARACTERISTIC_SPEED, new byte[] { (byte)value });
-            }
-        });
 
         m_ScanProgress = findViewById(R.id.scanProgress);
         m_ScanProgress.setVisibility(View.GONE);
@@ -159,7 +140,6 @@ public class MarqueeActivity extends BluetoothActivity
     private void Scan()
     {
         m_ScanProgress.setVisibility(View.VISIBLE);
-
         m_ConnectionManager.Scan(false, 30000);
     }
 
@@ -170,7 +150,54 @@ public class MarqueeActivity extends BluetoothActivity
 
         if (!device.GetName().startsWith(MARQUEE_DEVICE_PREFIX)) return;
 
-        device.Connect();
+        m_Device = device;
+        m_Device.Connect();
+
+        ((SeekBar)findViewById(R.id.brightness_slider)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {
+                SetProgress(getResources(), seekBar, m_BrightnessThumb, progress);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                int value = seekBar.getProgress();
+                m_Device.WriteCharacteristic(SERVICE_MARQUEE, CHARACTERISTIC_BRIGHTNESS, new byte[] { (byte)value });
+            }
+        });
+
+        ((SeekBar)findViewById(R.id.speed_slider)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {
+                SetProgress(getResources(), seekBar, m_SpeedThumb, progress);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                int value = seekBar.getProgress();
+                m_Device.WriteCharacteristic(SERVICE_MARQUEE, CHARACTERISTIC_SPEED, new byte[] { (byte)value });
+            }
+        });
+
+        Button button = findViewById(R.id.send_button);
+        button.setOnClickListener(new View.OnClickListener()
+        {
+            public void onClick(View v)
+            {
+                EditText editText = findViewById(R.id.message);
+                m_Device.WriteCharacteristic(SERVICE_MARQUEE, CHARACTERISTIC_MESSAGE,  editText.getText().toString().getBytes());
+            }
+        });
     }
 
     private static void SetProgress(Resources resources, SeekBar seekBar, View thumb, int progress) {
