@@ -33,5 +33,6 @@
     <style name="BezSeekBar" parent="Widget.AppCompat.SeekBar.Discrete">
         <item name="android:progressBackgroundTint">@color/SoftBlue</item>
         <item name="android:progressTint">@color/BezBlue</item>
+        <item name="tickMark">@null</item>
     </style>
 </resources>

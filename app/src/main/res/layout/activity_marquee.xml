@@ -26,27 +26,21 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_margin="20dp"
-                android:text="Message"/>
             <EditText
                 android:id="@+id/message"
                 android:layout_width="match_parent"
-                android:layout_height="400px"
+                android:layout_height="800px"
                 android:background="@drawable/select_border_small"
                 android:gravity="top"
+                android:layout_marginTop="20dp"
                 android:layout_marginLeft="20dp"
                 android:layout_marginRight="20dp"
                 android:inputType="textMultiLine"
-                android:maxLines="8"
                 android:maxLength="1995"
                 android:overScrollMode="ifContentScrolls"
                 android:scrollbarStyle="insideInset"
                 android:scrollbars="vertical"
+                android:hint="Enter message ..."
                 />
             <com.beztooth.UI.Util.BezButton
                 android:id="@+id/send_button"
@@ -58,7 +52,7 @@
                 android:textStyle="bold"
                 android:textAlignment="center"
                 android:textColor="@color/BezBlue"
-                android:text="@string/send" />
+                android:text="@string/send_text" />
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

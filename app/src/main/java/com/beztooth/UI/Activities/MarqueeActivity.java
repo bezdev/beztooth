@@ -36,7 +36,7 @@ public class MarqueeActivity extends BluetoothActivity
     private static final String MARQUEE_DEVICE_PREFIX = "Marquee";
 
     private static final String SERVICE_MARQUEE = "5ef12a1f-5c32-4d60-b4d7-b312a37d6adc";
-    private static final String CHARACTERISTIC_MESSAGE = "5ef12a1f-5c32-4d60-b4d7-b312a37d6ade";
+    private static final String CHARACTERISTIC_MESSAGE = "5ef12a1f-5c32-4d60-b4d7-b312a37d6add";
     private static final String CHARACTERISTIC_BRIGHTNESS = "5ef12a1f-5c32-4d60-b4d7-b312a37d6ade";
     private static final String CHARACTERISTIC_SPEED = "5ef12a1f-5c32-4d60-b4d7-b312a37d6adf";
 
@@ -74,8 +74,7 @@ public class MarqueeActivity extends BluetoothActivity
         {
             if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(CHARACTERISTIC_MESSAGE))
             {
-                EditText editText = findViewById(R.id.message);
-                editText.setText(Util.GetDataString(intent.getByteArrayExtra(ConnectionManager.DATA), Constants.CharacteristicReadType.STRING));
+
             }
             else if (intent.getStringExtra(ConnectionManager.CHARACTERISTIC).equalsIgnoreCase(CHARACTERISTIC_BRIGHTNESS))
             {
@@ -166,6 +165,8 @@ public class MarqueeActivity extends BluetoothActivity
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
+                if (m_Device == null) return;
+
                 int value = seekBar.getProgress();
                 m_Device.WriteCharacteristic(SERVICE_MARQUEE, CHARACTERISTIC_BRIGHTNESS, new byte[] { (byte)value });
             }
@@ -184,6 +185,8 @@ public class MarqueeActivity extends BluetoothActivity
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
+                if (m_Device == null) return;
+
                 int value = seekBar.getProgress();
                 m_Device.WriteCharacteristic(SERVICE_MARQUEE, CHARACTERISTIC_SPEED, new byte[] { (byte)value });
             }
@@ -194,10 +197,14 @@ public class MarqueeActivity extends BluetoothActivity
         {
             public void onClick(View v)
             {
+                if (m_Device == null) return;
+
                 EditText editText = findViewById(R.id.message);
-                m_Device.WriteCharacteristic(SERVICE_MARQUEE, CHARACTERISTIC_MESSAGE,  editText.getText().toString().getBytes());
+                m_Device.WriteCharacteristic(SERVICE_MARQUEE, CHARACTERISTIC_MESSAGE, editText.getText().toString().getBytes());
             }
         });
+
+        m_ScanProgress.setVisibility(View.GONE);
     }
 
     private static void SetProgress(Resources resources, SeekBar seekBar, View thumb, int progress) {

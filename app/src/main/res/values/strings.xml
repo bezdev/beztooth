@@ -13,7 +13,7 @@
     <string name="extended_props">Extended props</string>
     <string name="start">Start</string>
     <string name="stop">Stop</string>
-    <string name="send">Send</string>
+    <string name="send_text">Send Text</string>
 
     <string name="thermometer">Thermometer</string>
     <string name="sync_clock">Sync Clock</string>
