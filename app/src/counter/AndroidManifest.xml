@@ -6,7 +6,8 @@
         android:label="@string/counter"
         android:icon="@drawable/ic_launcher_counter"
         android:roundIcon="@drawable/ic_launcher_counter" >
-        <activity android:name="com.beztooth.UI.Activities.CounterActivity">
+        <activity android:name="com.beztooth.UI.Activities.CounterActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

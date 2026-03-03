@@ -6,7 +6,8 @@
         android:label="@string/sync_clock"
         android:icon="@drawable/ic_launcher_sync_clock"
         android:roundIcon="@drawable/ic_launcher_sync_clock" >
-        <activity android:name="com.beztooth.UI.Activities.SyncClockActivity">
+        <activity android:name="com.beztooth.UI.Activities.SyncClockActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

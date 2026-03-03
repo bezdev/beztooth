@@ -6,7 +6,8 @@
         android:label="@string/garage_door" 
         android:icon="@mipmap/ic_launcher_garage_door"
         android:roundIcon="@mipmap/ic_launcher_garage_door">
-        <activity android:name="com.beztooth.UI.Activities.GarageDoorActivity" >
+        <activity android:name="com.beztooth.UI.Activities.GarageDoorActivity"
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

@@ -5,7 +5,8 @@
         android:label="@string/app_name"
         android:icon="@drawable/ic_launcher_beztooth"
         android:roundIcon="@drawable/ic_launcher_beztooth">
-        <activity android:name="com.beztooth.UI.Activities.Beztooth" >
+        <activity android:name="com.beztooth.UI.Activities.Beztooth"
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

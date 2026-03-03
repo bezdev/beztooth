@@ -2,6 +2,7 @@
     <string name="app_name">Beztooth</string>
     <string name="ble_not_supported">BLE is not supported on this device.</string>
     <string name="no_location_permission">No permission to access location.</string>
+    <string name="no_bluetooth_permission">No permission to access Bluetooth.</string>
     <string name="scan">Scan</string>
     <string name="disconnect">Disconnect</string>
     <string name="read">Read</string>

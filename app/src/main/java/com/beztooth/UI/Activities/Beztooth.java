@@ -98,6 +98,7 @@ public class Beztooth extends BluetoothActivity
                 public void Do(View view)
                 {
                     Intent intent = new Intent(view.getContext(), finalClass);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     view.getContext().startActivity(intent);
                 }
             });
@@ -131,6 +132,7 @@ public class Beztooth extends BluetoothActivity
                 public void Do(View view)
                 {
                     Intent intent = new Intent(view.getContext(), finalClass);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     view.getContext().startActivity(intent);
                 }
             });

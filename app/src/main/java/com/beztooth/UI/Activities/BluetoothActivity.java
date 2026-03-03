@@ -10,10 +10,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AppCompatActivity;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.appcompat.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.widget.Toast;
 
@@ -23,6 +24,7 @@ import com.beztooth.R;
 public abstract class BluetoothActivity extends AppCompatActivity
 {
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+    private static final int PERMISSIONS_REQUEST_BLUETOOTH = 2;
     private static final int REQUEST_ENABLE_BT = 1;
 
     private static boolean s_WaitingOnEnableBluetoothRequest = false;
@@ -167,11 +169,31 @@ public abstract class BluetoothActivity extends AppCompatActivity
             return;
         }
 
+        // Android 12+ requires explicit Bluetooth scan and connect permissions
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+        {
+            if (!HasBluetoothPermissions())
+            {
+                RequestBluetoothPermissions();
+                return;
+            }
+        }
+
         if (!HasLocationPermission())
         {
             RequestLocationPermission();
         }
+    }
 
+    private boolean HasBluetoothPermissions()
+    {
+        return checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
+               checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void RequestBluetoothPermissions()
+    {
+        requestPermissions(new String[] { Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT }, PERMISSIONS_REQUEST_BLUETOOTH);
     }
 
     private boolean HasLocationPermission()
@@ -187,7 +209,25 @@ public abstract class BluetoothActivity extends AppCompatActivity
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults)
     {
-        if (requestCode == PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == PERMISSIONS_REQUEST_BLUETOOTH)
+        {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+            {
+                // Check location permissions after Bluetooth permissions are granted
+                if (!HasLocationPermission())
+                {
+                    RequestLocationPermission();
+                }
+            }
+            else
+            {
+                Toast.makeText(this, R.string.no_bluetooth_permission, Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        }
+        else if (requestCode == PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
         {
             if (grantResults.length > 0 && grantResults[0] != PackageManager.PERMISSION_GRANTED)
             {

@@ -6,8 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.widget.Toolbar;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.appcompat.widget.Toolbar;
 import android.text.SpannableString;
 import android.text.style.RelativeSizeSpan;
 import android.view.Menu;
@@ -190,21 +190,21 @@ public class ThermometerActivity extends BluetoothActivity
     {
         if (m_Device == null || !m_IsConnected) return true;
 
-        switch (item.getItemId()) {
-            case R.id.menu_sync_time:
-                m_Device.WriteCharacteristic(Constants.AddBaseUUID(Constants.SERVICE_CURRENT_TIME.UUID), Constants.AddBaseUUID(Constants.CHARACTERISTIC_CURRENT_TIME.UUID), Util.GetTimeInBytes(System.currentTimeMillis()));
-                m_Device.ReadCharacteristic(Constants.AddBaseUUID(Constants.SERVICE_CURRENT_TIME.UUID), Constants.AddBaseUUID(Constants.CHARACTERISTIC_CURRENT_TIME.UUID));
-                return true;
-            case R.id.menu_live_time:
-                item.setChecked(!item.isChecked());
-                m_Device.SetCharacteristicNotification(Constants.AddBaseUUID(Constants.SERVICE_CURRENT_TIME.UUID), Constants.AddBaseUUID(Constants.CHARACTERISTIC_CURRENT_TIME.UUID), item.isChecked());
-                return true;
-            case R.id.menu_live_sensors:
-                item.setChecked(!item.isChecked());
-                m_Device.SetCharacteristicNotification(Constants.AddBaseUUID(Constants.SERVICE_ENVIRONMENTAL_SENSING.UUID), Constants.LEO_SERVER_V2_ALL_SENSOR_DATA.UUID, item.isChecked());
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+        int id = item.getItemId();
+        if (id == R.id.menu_sync_time) {
+            m_Device.WriteCharacteristic(Constants.AddBaseUUID(Constants.SERVICE_CURRENT_TIME.UUID), Constants.AddBaseUUID(Constants.CHARACTERISTIC_CURRENT_TIME.UUID), Util.GetTimeInBytes(System.currentTimeMillis()));
+            m_Device.ReadCharacteristic(Constants.AddBaseUUID(Constants.SERVICE_CURRENT_TIME.UUID), Constants.AddBaseUUID(Constants.CHARACTERISTIC_CURRENT_TIME.UUID));
+            return true;
+        } else if (id == R.id.menu_live_time) {
+            item.setChecked(!item.isChecked());
+            m_Device.SetCharacteristicNotification(Constants.AddBaseUUID(Constants.SERVICE_CURRENT_TIME.UUID), Constants.AddBaseUUID(Constants.CHARACTERISTIC_CURRENT_TIME.UUID), item.isChecked());
+            return true;
+        } else if (id == R.id.menu_live_sensors) {
+            item.setChecked(!item.isChecked());
+            m_Device.SetCharacteristicNotification(Constants.AddBaseUUID(Constants.SERVICE_ENVIRONMENTAL_SENSING.UUID), Constants.LEO_SERVER_V2_ALL_SENSOR_DATA.UUID, item.isChecked());
+            return true;
+        } else {
+            return super.onOptionsItemSelected(item);
         }
     }
 
